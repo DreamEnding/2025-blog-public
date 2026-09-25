@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { DocsMarkdown } from '@/components/docs-markdown'
 import type { Entry, Section } from '@/lib/site-db'
-import { BookOpenText, DatabaseBackup, Layers3, LogOut, Settings2 } from 'lucide-react'
+import { BookOpenText, DatabaseBackup, LogOut, Settings2 } from 'lucide-react'
 
 type Data = { sections: Section[]; entries: Entry[]; settings: Record<string, string> }
 
@@ -53,7 +53,7 @@ export function AdminLogin() {
 	)
 }
 
-export function AdminWorkspace() {
+export function AdminWorkspace({ writerOnly = false }: { writerOnly?: boolean }) {
 	const router = useRouter()
 	const [data, setData] = useState<Data | null>(null)
 	const [error, setError] = useState('')
@@ -186,8 +186,8 @@ export function AdminWorkspace() {
 		<>
 			<div className='docs-admin-head'>
 				<div>
-					<p className='docs-admin-kicker'>站点控制台</p>
-					<h1>内容管理</h1>
+					<p className='docs-admin-kicker'>{writerOnly ? '文章发布' : '站点控制台'}</p>
+					<h1>{writerOnly ? '写文章' : '内容管理'}</h1>
 					<p className='docs-admin-description'>在这里编写、发布和整理站点内容。</p>
 				</div>
 				<button
@@ -200,20 +200,19 @@ export function AdminWorkspace() {
 					<LogOut size={16} /> 退出登录
 				</button>
 			</div>
-			<div className='docs-tabs' aria-label='管理功能'>
-				<button className={tab === 'content' ? 'active' : ''} aria-pressed={tab === 'content'} onClick={() => setTab('content')}>
-					<BookOpenText size={17} /> 文档与文章
-				</button>
-				<button className={tab === 'sections' ? 'active' : ''} aria-pressed={tab === 'sections'} onClick={() => setTab('sections')}>
-					<Layers3 size={17} /> 栏目
-				</button>
-				<button className={tab === 'settings' ? 'active' : ''} aria-pressed={tab === 'settings'} onClick={() => setTab('settings')}>
-					<Settings2 size={17} /> 站点设置
-				</button>
-				<button className={tab === 'backup' ? 'active' : ''} aria-pressed={tab === 'backup'} onClick={() => setTab('backup')}>
-					<DatabaseBackup size={17} /> 备份恢复
-				</button>
-			</div>
+			{!writerOnly && (
+				<div className='docs-tabs' aria-label='管理功能'>
+					<button className={tab === 'content' ? 'active' : ''} aria-pressed={tab === 'content'} onClick={() => setTab('content')}>
+						<BookOpenText size={17} /> 文档与文章
+					</button>
+					<button className={tab === 'settings' ? 'active' : ''} aria-pressed={tab === 'settings'} onClick={() => setTab('settings')}>
+						<Settings2 size={17} /> 站点设置
+					</button>
+					<button className={tab === 'backup' ? 'active' : ''} aria-pressed={tab === 'backup'} onClick={() => setTab('backup')}>
+						<DatabaseBackup size={17} /> 备份恢复
+					</button>
+				</div>
+			)}
 			{error && (
 				<p className='docs-error' role='alert'>
 					{error}
@@ -280,7 +279,10 @@ export function AdminWorkspace() {
 										</span>
 									</div>
 									{draft.published ? (
-										<a href={`/docs/${draft.id}`} target='_blank' rel='noreferrer'>
+										<a
+											href={data.sections.find(section => section.id === draft.public_section_id)?.name === 'API 文档' ? '/api-docs' : `/articles/${draft.id}`}
+											target='_blank'
+											rel='noreferrer'>
 											查看公开页面 ↗
 										</a>
 									) : null}

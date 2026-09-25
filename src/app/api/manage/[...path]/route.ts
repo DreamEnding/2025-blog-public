@@ -56,11 +56,13 @@ export async function GET(_request: Request, context: Context) {
 			sections: db().prepare('SELECT * FROM sections').all(),
 			entries: db().prepare('SELECT * FROM entries').all(),
 			settings: db().prepare('SELECT * FROM settings').all(),
-			legacyFiles: (db().prepare('SELECT path, content, deleted FROM legacy_files').all() as { path: string; content: Buffer | null; deleted: number }[]).map(file => ({
-				path: file.path,
-				content: file.content?.toString('base64') || null,
-				deleted: file.deleted
-			})),
+			legacyFiles: (db().prepare('SELECT path, content, deleted FROM legacy_files').all() as { path: string; content: Buffer | null; deleted: number }[]).map(
+				file => ({
+					path: file.path,
+					content: file.content?.toString('base64') || null,
+					deleted: file.deleted
+				})
+			),
 			likes: db().prepare('SELECT slug, count FROM likes').all(),
 			images
 		}
@@ -122,13 +124,44 @@ export async function POST(request: Request, context: Context) {
 			)
 				throw new Error('备份格式无效')
 			if (backup.sections.length > 1000 || backup.entries.length > 10000 || Object.keys(backup.images).length > 10000) throw new Error('备份超过限制')
+			const fixed = new Map([
+				['API 文档', 'docs'],
+				['使用教程', 'articles'],
+				['AI 技术分享', 'articles']
+			])
+			if (
+				backup.sections.length !== fixed.size ||
+				new Set(backup.sections.map((row: { name: string }) => row.name)).size !== fixed.size ||
+				backup.sections.some((row: { name: string; kind: string; parent_id: number | null }) => fixed.get(row.name) !== row.kind || row.parent_id !== null)
+			)
+				throw new Error('备份栏目必须是三个固定栏目')
+			const apiId = backup.sections.find((row: { name: string }) => row.name === 'API 文档').id
+			if (
+				backup.entries.filter(
+					(row: { section_id: number; public_section_id: number | null; published: number }) =>
+						row.section_id === apiId || (row.published && row.public_section_id === apiId)
+				).length > 1
+			)
+				throw new Error('API 文档最多保留一篇')
 			const legacyFiles = backup.version === 3 ? backup.legacyFiles : []
 			const likes = backup.version === 3 ? backup.likes : []
 			if (!Array.isArray(legacyFiles) || !Array.isArray(likes) || legacyFiles.length > 20000 || likes.length > 20000) throw new Error('备份内容无效')
 			for (const file of legacyFiles) {
-				if (typeof file.path !== 'string' || !validLegacyPath(file.path) || ![0, 1].includes(file.deleted) || (file.deleted === 0 && (typeof file.content !== 'string' || file.content.length > 16_000_000))) throw new Error('备份文件无效')
+				if (
+					typeof file.path !== 'string' ||
+					!validLegacyPath(file.path) ||
+					![0, 1].includes(file.deleted) ||
+					(file.deleted === 0 && (typeof file.content !== 'string' || file.content.length > 16_000_000))
+				)
+					throw new Error('备份文件无效')
+				if (
+					file.path.startsWith('public/blogs/') ||
+					['src/app/projects/list.json', 'src/app/share/list.json', 'src/app/bloggers/list.json'].includes(file.path)
+				)
+					throw new Error('备份包含已移除的旧内容')
 			}
-			for (const like of likes) if (typeof like.slug !== 'string' || like.slug.length > 150 || !Number.isSafeInteger(like.count) || like.count < 0) throw new Error('备份点赞数据无效')
+			for (const like of likes)
+				if (typeof like.slug !== 'string' || like.slug.length > 150 || !Number.isSafeInteger(like.count) || like.count < 0) throw new Error('备份点赞数据无效')
 			const images = Object.entries(backup.images) as [string, string][]
 			for (const [name, value] of images) {
 				if (!/^[\da-f-]{36}\.(png|jpg|webp|gif)$/.test(name) || typeof value !== 'string' || value.length > 12_000_000) throw new Error('备份图片无效')

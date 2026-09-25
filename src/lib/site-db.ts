@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, renameSync } from 'node:fs'
 import path from 'node:path'
 
 export type Section = { id: number; name: string; kind: 'docs' | 'articles'; parent_id: number | null; position: number }
@@ -75,11 +75,50 @@ export function db() {
 		const count = (connection.prepare('SELECT COUNT(*) AS count FROM sections').get() as { count: number }).count
 		if (!count) {
 			const insert = connection.prepare('INSERT INTO sections (name, kind, position) VALUES (?, ?, ?)')
-			for (const [index, name] of ['API 文档', '使用教程', '模型选择', 'AI 技术分享', '求职面经'].entries()) {
-				insert.run(name, index < 3 ? 'docs' : 'articles', index)
+			for (const [index, name] of ['API 文档', '使用教程', 'AI 技术分享'].entries()) {
+				insert.run(name, index === 0 ? 'docs' : 'articles', index)
 			}
 		}
 		connection.prepare("INSERT INTO meta (key, value) VALUES ('initialized', '1')").run()
+	}
+	if (!connection.prepare("SELECT 1 FROM meta WHERE key = 'content_redesign_20260925'").get()) {
+		const oldContent =
+			(connection.prepare('SELECT COUNT(*) AS count FROM entries').get() as { count: number }).count ||
+			(connection.prepare("SELECT COUNT(*) AS count FROM sections WHERE name NOT IN ('API 文档', '使用教程', 'AI 技术分享')").get() as { count: number })
+				.count ||
+			(
+				connection
+					.prepare(
+						"SELECT COUNT(*) AS count FROM legacy_files WHERE path LIKE 'public/blogs/%' OR path IN ('src/app/projects/list.json', 'src/app/share/list.json', 'src/app/bloggers/list.json')"
+					)
+					.get() as { count: number }
+			).count
+		if (oldContent) {
+			const backup = path.join(dataDir(), 'site-before-content-redesign.db')
+			if (!existsSync(backup)) connection.exec(`VACUUM INTO '${backup.replace(/'/g, "''")}'`)
+			const uploads = path.join(dataDir(), 'uploads')
+			const uploadsBackup = path.join(dataDir(), 'uploads-before-content-redesign')
+			if (existsSync(uploads) && readdirSync(uploads).length && !existsSync(uploadsBackup)) {
+				renameSync(uploads, uploadsBackup)
+				mkdirSync(uploads)
+			}
+		}
+		connection.transaction(() => {
+			connection!.prepare('DELETE FROM entries').run()
+			connection!.prepare('DELETE FROM sections').run()
+			connection!
+				.prepare(
+					"DELETE FROM legacy_files WHERE path LIKE 'public/blogs/%' OR path IN ('src/app/projects/list.json', 'src/app/share/list.json', 'src/app/bloggers/list.json')"
+				)
+				.run()
+			connection!.prepare('DELETE FROM likes').run()
+			connection!.prepare('DELETE FROM like_events').run()
+			const insert = connection!.prepare('INSERT INTO sections (name, kind, position) VALUES (?, ?, ?)')
+			insert.run('API 文档', 'docs', 0)
+			insert.run('使用教程', 'articles', 1)
+			insert.run('AI 技术分享', 'articles', 2)
+			connection!.prepare("INSERT INTO meta (key, value) VALUES ('content_redesign_20260925', '1')").run()
+		})()
 	}
 	return connection
 }

@@ -9,12 +9,8 @@ import { useCenterStore } from '@/hooks/use-center'
 import { CARD_SPACING } from '@/consts'
 import ScrollOutlineSVG from '@/svgs/scroll-outline.svg'
 import ScrollFilledSVG from '@/svgs/scroll-filled.svg'
-import ProjectsFilledSVG from '@/svgs/projects-filled.svg'
-import ProjectsOutlineSVG from '@/svgs/projects-outline.svg'
 import AboutFilledSVG from '@/svgs/about-filled.svg'
 import AboutOutlineSVG from '@/svgs/about-outline.svg'
-import ShareFilledSVG from '@/svgs/share-filled.svg'
-import ShareOutlineSVG from '@/svgs/share-outline.svg'
 import WebsiteFilledSVG from '@/svgs/website-filled.svg'
 import WebsiteOutlineSVG from '@/svgs/website-outline.svg'
 import { usePathname } from 'next/navigation'
@@ -33,34 +29,28 @@ const list = [
 		href: '/blog'
 	},
 	{
-		icon: ProjectsOutlineSVG,
-		iconActive: ProjectsFilledSVG,
-		label: '我的项目',
-		href: '/projects'
+		icon: BookOpenText,
+		iconActive: BookOpenText,
+		label: 'API 文档',
+		href: '/api-docs'
+	},
+	{
+		icon: WebsiteOutlineSVG,
+		iconActive: WebsiteFilledSVG,
+		label: '使用教程',
+		href: '/tutorials'
+	},
+	{
+		icon: WebsiteOutlineSVG,
+		iconActive: WebsiteFilledSVG,
+		label: 'AI 技术分享',
+		href: '/ai-sharing'
 	},
 	{
 		icon: AboutOutlineSVG,
 		iconActive: AboutFilledSVG,
 		label: '关于网站',
 		href: '/about'
-	},
-	{
-		icon: ShareOutlineSVG,
-		iconActive: ShareFilledSVG,
-		label: '推荐分享',
-		href: '/share'
-	},
-	{
-		icon: WebsiteOutlineSVG,
-		iconActive: WebsiteFilledSVG,
-		label: '优秀博客',
-		href: '/bloggers'
-	},
-	{
-		icon: BookOpenText,
-		iconActive: BookOpenText,
-		label: 'API 文档',
-		href: '/docs'
 	}
 ]
 

@@ -22,8 +22,16 @@ function position(value: unknown) {
 
 function section(value: unknown) {
 	const found = db().prepare('SELECT * FROM sections WHERE id = ?').get(id(value)) as Section | undefined
-	if (!found) throw new Error('栏目不存在')
+	if (!found || !['API 文档', '使用教程', 'AI 技术分享'].includes(found.name)) throw new Error('栏目不存在')
 	return found
+}
+
+function checkApiLimit(target: Section, currentId?: number) {
+	if (target.name !== 'API 文档') return
+	const existing = db()
+		.prepare('SELECT id FROM entries WHERE (section_id = ? OR (published = 1 AND public_section_id = ?)) AND id != ? LIMIT 1')
+		.get(target.id, target.id, currentId ?? -1)
+	if (existing) throw new Error('API 文档最多保留一篇')
 }
 
 function entry(value: unknown) {
@@ -32,44 +40,21 @@ function entry(value: unknown) {
 	return found
 }
 
-export function createSection(input: Record<string, unknown>) {
-	const name = required(input.name, '栏目名称')
-	const kind = input.kind
-	if (kind !== 'docs' && kind !== 'articles') throw new Error('栏目类型无效')
-	const parent = input.parent_id == null ? null : section(input.parent_id)
-	if (parent && (kind !== 'docs' || parent.kind !== 'docs' || parent.parent_id !== null)) throw new Error('只允许文档栏目有一级分组')
-	const max = db()
-		.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS next FROM sections WHERE parent_id IS ?')
-		.get(parent?.id ?? null) as { next: number }
-	return db()
-		.prepare('INSERT INTO sections (name, kind, parent_id, position) VALUES (?, ?, ?, ?)')
-		.run(name, kind, parent?.id ?? null, max.next).lastInsertRowid
+export function createSection() {
+	throw new Error('栏目固定，不能创建')
 }
 
-export function updateSection(input: Record<string, unknown>) {
-	const current = section(input.id)
-	const name = required(input.name, '栏目名称')
-	const parent = input.parent_id == null ? null : section(input.parent_id)
-	if (parent && (current.kind !== 'docs' || parent.kind !== 'docs' || parent.parent_id !== null || parent.id === current.id)) throw new Error('分组层级无效')
-	if (parent && (db().prepare('SELECT COUNT(*) AS count FROM sections WHERE parent_id = ?').get(current.id) as { count: number }).count)
-		throw new Error('含有子栏目，不能移动到分组下')
-	db()
-		.prepare('UPDATE sections SET name = ?, parent_id = ?, position = ? WHERE id = ?')
-		.run(name, parent?.id ?? null, position(input.position), current.id)
+export function updateSection() {
+	throw new Error('栏目固定，不能修改')
 }
 
-export function deleteSection(input: Record<string, unknown>) {
-	const current = section(input.id)
-	const children = db().prepare('SELECT COUNT(*) AS count FROM sections WHERE parent_id = ?').get(current.id) as { count: number }
-	const docs = db()
-		.prepare('SELECT COUNT(*) AS count FROM entries WHERE section_id = ? OR public_section_id = ? OR previous_section_id = ?')
-		.get(current.id, current.id, current.id) as { count: number }
-	if (children.count || docs.count) throw new Error('请先处理栏目中的子栏目和内容')
-	db().prepare('DELETE FROM sections WHERE id = ?').run(current.id)
+export function deleteSection() {
+	throw new Error('栏目固定，不能删除')
 }
 
 export function createEntry(input: Record<string, unknown>) {
 	const target = section(input.section_id)
+	checkApiLimit(target)
 	const title = required(input.title, '标题')
 	const max = db().prepare('SELECT COALESCE(MAX(position), -1) + 1 AS next FROM entries WHERE section_id = ?').get(target.id) as { next: number }
 	return db().prepare('INSERT INTO entries (section_id, title, position) VALUES (?, ?, ?)').run(target.id, title, max.next).lastInsertRowid
@@ -78,6 +63,7 @@ export function createEntry(input: Record<string, unknown>) {
 export function saveEntry(input: Record<string, unknown>) {
 	const current = entry(input.id)
 	const target = section(input.section_id)
+	checkApiLimit(target, current.id)
 	db()
 		.prepare('UPDATE entries SET section_id = ?, title = ?, summary = ?, body = ?, position = ? WHERE id = ?')
 		.run(
@@ -93,6 +79,7 @@ export function saveEntry(input: Record<string, unknown>) {
 export function publishEntry(input: Record<string, unknown>) {
 	const current = entry(input.id)
 	if (!current.title.trim() || !current.body.trim()) throw new Error('标题和正文不能为空')
+	checkApiLimit(section(current.section_id), current.id)
 	db()
 		.prepare(
 			`UPDATE entries SET previous_title = public_title, previous_summary = public_summary, previous_body = public_body,
@@ -110,6 +97,7 @@ export function withdrawEntry(input: Record<string, unknown>) {
 export function restoreEntry(input: Record<string, unknown>) {
 	const current = entry(input.id)
 	if (!current.previous_title || current.previous_body == null) throw new Error('没有可恢复的上一次发布版本')
+	checkApiLimit(section(current.previous_section_id), current.id)
 	db()
 		.prepare(
 			`UPDATE entries SET title = previous_title, summary = previous_summary, body = previous_body, section_id = previous_section_id, position = previous_position,

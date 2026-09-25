@@ -19,7 +19,10 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 			{query &&
 				(results.length ? (
 					results.map(item => (
-						<Link className='docs-list-item' key={item.id} href={`/docs/${item.id}`}>
+						<Link
+							className='docs-list-item'
+							key={item.id}
+							href={allSections.find(section => section.id === item.section_id)?.name === 'API 文档' ? '/api-docs' : `/articles/${item.id}`}>
 							<small>{allSections.find(section => section.id === item.section_id)?.name}</small>
 							<strong>{item.title}</strong>
 							<span>{item.snippet}</span>

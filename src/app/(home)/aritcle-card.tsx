@@ -1,16 +1,23 @@
 import Card from '@/components/card'
 import { useCenterStore } from '@/hooks/use-center'
-import { useLatestBlog } from '@/hooks/use-blog-index'
 import { useConfigStore } from './stores/config-store'
 import { CARD_SPACING } from '@/consts'
 import dayjs from 'dayjs'
 import Link from 'next/link'
 import { HomeDraggableLayer } from './home-draggable-layer'
+import { useEffect, useState } from 'react'
 
 export default function ArticleCard() {
 	const center = useCenterStore()
 	const { cardStyles, siteContent } = useConfigStore()
-	const { blog, loading } = useLatestBlog()
+	const [blog, setBlog] = useState<{ id: number; title: string; summary: string; published_at: string } | null>(null)
+	const [loading, setLoading] = useState(true)
+	useEffect(() => {
+		fetch('/api/content')
+			.then(response => response.json())
+			.then(data => setBlog(data.recent[0] || null))
+			.finally(() => setLoading(false))
+	}, [])
 	const styles = cardStyles.articleCard
 	const hiCardStyles = cardStyles.hiCard
 	const socialButtonsStyles = cardStyles.socialButtons
@@ -39,16 +46,12 @@ export default function ArticleCard() {
 						<span className='text-secondary text-xs'>加载中...</span>
 					</div>
 				) : blog ? (
-					<Link href={`/blog/${blog.slug}`} className='flex transition-opacity hover:opacity-80'>
-						{blog.cover ? (
-							<img src={blog.cover} alt='cover' className='mr-3 h-12 w-12 shrink-0 rounded-xl border object-cover' />
-						) : (
-							<div className='text-secondary mr-3 grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/60'>+</div>
-						)}
+					<Link href={`/articles/${blog.id}`} className='flex transition-opacity hover:opacity-80'>
+						<div className='text-secondary mr-3 grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/60'>+</div>
 						<div className='flex-1'>
-							<h3 className='line-clamp-1 text-sm font-medium'>{blog.title || blog.slug}</h3>
+							<h3 className='line-clamp-1 text-sm font-medium'>{blog.title}</h3>
 							{blog.summary && <p className='text-secondary mt-1 line-clamp-3 text-xs'>{blog.summary}</p>}
-							<p className='text-secondary mt-3 text-xs'>{dayjs(blog.date).format('YYYY/M/D')}</p>
+							<p className='text-secondary mt-3 text-xs'>{dayjs(blog.published_at).format('YYYY/M/D')}</p>
 						</div>
 					</Link>
 				) : (
