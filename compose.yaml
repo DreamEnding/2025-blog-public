@@ -1,16 +1,27 @@
 services:
   docs:
-    build: .
+    build:
+      context: .
+      args:
+        SITE_URL: ${SITE_URL:-http://localhost:3000}
     restart: unless-stopped
     ports:
-      - "${SITE_PORT:-3000}:3000"
+      - '${SITE_PORT:-3000}:3000'
     environment:
       ADMIN_USERNAME: ${ADMIN_USERNAME:?Set ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET}
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SITE_URL: ${SITE_URL:-http://localhost:3000}
       DATA_DIR: /data
     volumes:
       - site_data:/data
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
 
 volumes:
   site_data:
