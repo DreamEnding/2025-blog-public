@@ -1,9 +1,6 @@
 services:
   docs:
-    build:
-      context: .
-      args:
-        SITE_URL: ${SITE_URL:-http://localhost:3000}
+    image: ghcr.io/dreamending/2025-blog-public:latest
     restart: unless-stopped
     ports:
       - '${SITE_PORT:-3000}:3000'
@@ -12,7 +9,6 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET}
       SITE_URL: ${SITE_URL:-http://localhost:3000}
-      NEXT_PUBLIC_SITE_URL: ${SITE_URL:-http://localhost:3000}
       DATA_DIR: /data
     volumes:
       - site_data:/data

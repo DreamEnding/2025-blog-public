@@ -4,8 +4,6 @@ RUN npm install -g pnpm@10.33.2
 COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-ARG SITE_URL=http://localhost:3000
-ENV SITE_URL=$SITE_URL NEXT_PUBLIC_SITE_URL=$SITE_URL
 RUN pnpm build
 
 FROM node:22-bookworm-slim

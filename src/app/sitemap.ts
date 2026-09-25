@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import blogIndex from '@/../public/blogs/index.json'
 import type { BlogIndexItem } from '@/app/blog/types'
 
-export const dynamic = 'force-static'
+export const dynamic = 'force-dynamic'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	// 域名配置：
