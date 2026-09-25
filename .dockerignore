@@ -1,0 +1,8 @@
+node_modules
+.next
+.open-next
+.git
+.env*
+data
+docs
+*.log

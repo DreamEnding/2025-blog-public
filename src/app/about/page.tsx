@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import { useMarkdownRender } from '@/hooks/use-markdown-render'
@@ -10,6 +10,7 @@ import { useConfigStore } from '@/app/(home)/stores/config-store'
 import LikeButton from '@/components/like-button'
 import GithubSVG from '@/svgs/github.svg'
 import initialData from './list.json'
+import { loadLegacyJson } from '@/lib/legacy-client'
 
 export default function Page() {
 	const [data, setData] = useState<AboutData>(initialData as AboutData)
@@ -17,27 +18,21 @@ export default function Page() {
 	const [isEditMode, setIsEditMode] = useState(false)
 	const [isSaving, setIsSaving] = useState(false)
 	const [isPreviewMode, setIsPreviewMode] = useState(false)
-	const keyInputRef = useRef<HTMLInputElement>(null)
-
-	const { isAuth, setPrivateKey } = useAuthStore()
+	const { isAuth } = useAuthStore()
 	const { siteContent } = useConfigStore()
 	const { content, loading } = useMarkdownRender(data.content)
 	const hideEditButton = siteContent.hideEditButton ?? false
 
-	const handleChoosePrivateKey = async (file: File) => {
-		try {
-			const text = await file.text()
-			setPrivateKey(text)
-			await handleSave()
-		} catch (error) {
-			console.error('Failed to read private key:', error)
-			toast.error('读取密钥文件失败')
-		}
-	}
+	useEffect(() => {
+		loadLegacyJson<AboutData>('src/app/about/list.json').then(value => {
+			setData(value)
+			setOriginalData(value)
+		}).catch(console.error)
+	}, [])
 
 	const handleSaveClick = () => {
 		if (!isAuth) {
-			keyInputRef.current?.click()
+			window.location.assign(`/admin?next=${encodeURIComponent(window.location.pathname)}`)
 		} else {
 			handleSave()
 		}
@@ -72,7 +67,7 @@ export default function Page() {
 		setIsPreviewMode(false)
 	}
 
-	const buttonText = isAuth ? '保存' : '导入密钥'
+	const buttonText = isAuth ? '保存' : '登录后台'
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -91,18 +86,6 @@ export default function Page() {
 
 	return (
 		<>
-			<input
-				ref={keyInputRef}
-				type='file'
-				accept='.pem'
-				className='hidden'
-				onChange={async e => {
-					const f = e.target.files?.[0]
-					if (f) await handleChoosePrivateKey(f)
-					if (e.currentTarget) e.currentTarget.value = ''
-				}}
-			/>
-
 			<div className='flex flex-col items-center justify-center px-6 pt-32 pb-12 max-sm:px-0'>
 				<div className='w-full max-w-[800px]'>
 					{isEditMode ? (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import { Plus, X } from 'lucide-react'
@@ -9,6 +9,7 @@ import { useAuthStore } from '@/hooks/use-auth'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 import initialList from './list.json'
 import { pushSnippets } from './services/push-snippets'
+import { loadLegacyJson } from '@/lib/legacy-client'
 
 const getRandomSnippet = (list: string[]) => (list.length === 0 ? '' : list[Math.floor(Math.random() * list.length)])
 
@@ -21,11 +22,17 @@ export default function Page() {
 	const [isManageOpen, setIsManageOpen] = useState(false)
 	const [draftSnippets, setDraftSnippets] = useState<string[]>([])
 	const [newSnippet, setNewSnippet] = useState('')
-	const keyInputRef = useRef<HTMLInputElement>(null)
-
-	const { isAuth, setPrivateKey } = useAuthStore()
+	const { isAuth } = useAuthStore()
 	const { siteContent } = useConfigStore()
 	const hideEditButton = siteContent.hideEditButton ?? false
+
+	useEffect(() => {
+		loadLegacyJson<string[]>('src/app/snippets/list.json').then(value => {
+			setSnippets(value)
+			setOriginalSnippets(value)
+			setCurrentSnippet(getRandomSnippet(value))
+		}).catch(console.error)
+	}, [])
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,7 +65,7 @@ export default function Page() {
 
 	const handleSaveClick = () => {
 		if (!isAuth) {
-			keyInputRef.current?.click()
+			window.location.assign(`/admin?next=${encodeURIComponent(window.location.pathname)}`)
 		} else {
 			void handleSave()
 		}
@@ -67,17 +74,6 @@ export default function Page() {
 	const handleCancel = () => {
 		setSnippets(originalSnippets)
 		setIsEditMode(false)
-	}
-
-	const handleChoosePrivateKey = async (file: File) => {
-		try {
-			const text = await file.text()
-			await setPrivateKey(text)
-			await handleSave()
-		} catch (error) {
-			console.error('Failed to read private key:', error)
-			toast.error('读取密钥文件失败')
-		}
 	}
 
 	const openManageDialog = () => {
@@ -117,22 +113,10 @@ export default function Page() {
 		setNewSnippet('')
 	}
 
-	const buttonText = isAuth ? '保存' : '导入密钥'
+	const buttonText = isAuth ? '保存' : '登录后台'
 
 	return (
 		<>
-			<input
-				ref={keyInputRef}
-				type='file'
-				accept='.pem'
-				className='hidden'
-				onChange={async e => {
-					const file = e.target.files?.[0]
-					if (file) await handleChoosePrivateKey(file)
-					if (e.currentTarget) e.currentTarget.value = ''
-				}}
-			/>
-
 			<div className='flex min-h-[70vh] flex-col items-center justify-center px-6 py-24'>
 				<div className='w-full max-w-3xl text-center'>
 					<p className='text-2xl leading-relaxed font-semibold'>{currentSnippet || '无'}</p>

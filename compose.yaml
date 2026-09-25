@@ -1,0 +1,16 @@
+services:
+  docs:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${SITE_PORT:-3000}:3000"
+    environment:
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?Set ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET}
+      DATA_DIR: /data
+    volumes:
+      - site_data:/data
+
+volumes:
+  site_data:

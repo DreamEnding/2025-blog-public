@@ -3,6 +3,8 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
 
+export const HOME_WORLD = { width: 1760, height: 1050 }
+
 type CenterState = {
 	x: number
 	y: number
@@ -20,9 +22,10 @@ const computeCenter = () => {
 	}
 	const width = window.innerWidth
 	const height = window.innerHeight
+	const homeCanvas = window.location.pathname === '/'
 	return {
-		x: Math.floor(width / 2),
-		y: Math.floor(height / 2) - 24,
+		x: homeCanvas ? HOME_WORLD.width / 2 : Math.floor(width / 2),
+		y: homeCanvas ? HOME_WORLD.height / 2 : Math.floor(height / 2) - 24,
 		centerX: Math.floor(width / 2),
 		centerY: Math.floor(height / 2),
 		width,

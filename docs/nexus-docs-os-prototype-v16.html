@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nexus Docs OS v16 · Wider Notice Note</title>
+<style>
+:root{
+  --bg:#eef1ef;
+  --ink:#22383a;
+  --muted:#7d8f91;
+  --line:rgba(255,255,255,.72);
+  --glass:rgba(255,255,255,.48);
+  --accent:#39c8b5;
+  --accent-soft:#bff5eb;
+  --shadow:0 28px 75px rgba(54,75,69,.10);
+  --radius:30px;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--ink);
+}
+body{
+  background:
+    radial-gradient(48vw 38vw at 6% 96%,rgba(62,215,209,.32),transparent 68%),
+    radial-gradient(44vw 34vw at 50% 102%,rgba(255,226,92,.34),transparent 70%),
+    radial-gradient(50vw 40vw at 96% 90%,rgba(107,232,164,.30),transparent 68%),
+    var(--bg);
+}
+
+button{font:inherit;color:inherit}
+.app{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  min-width:1100px;
+  min-height:700px;
+  overflow:hidden;
+}
+.noise{
+  position:absolute;inset:0;pointer-events:none;opacity:.07;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.15'/%3E%3C/svg%3E");
+}
+
+/* =========================================================
+   SPATIAL CANVAS
+   ========================================================= */
+.canvas-viewport{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  z-index:2;
+  cursor:default;
+}
+.canvas-world{
+  position:absolute;
+  left:0;
+  top:0;
+  width:2060px;
+  height:960px;
+  will-change:transform;
+  transform:translate3d(0,0,0);
+}
+.canvas-world::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    radial-gradient(circle,rgba(58,91,87,.095) .7px,transparent .8px);
+  background-size:34px 34px;
+  mask-image:linear-gradient(to bottom,transparent 2%,#000 16%,#000 84%,transparent 98%);
+  opacity:.36;
+}
+.canvas-world::after{
+  content:"";
+  position:absolute;
+  left:965px;
+  top:468px;
+  width:700px;
+  height:570px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.20),transparent 70%);
+  pointer-events:none;
+}
+
+.canvas-vignette{
+  position:absolute;inset:0;pointer-events:none;z-index:6;
+  box-shadow:inset 0 0 100px rgba(233,239,237,.58);
+}
+
+/* subtle canvas locator */
+.canvas-locator{
+  position:absolute;
+  right:20px;
+  bottom:20px;
+  z-index:10;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:8px 11px;
+  border:1px solid rgba(255,255,255,.56);
+  border-radius:999px;
+  background:rgba(255,255,255,.28);
+  backdrop-filter:blur(14px);
+  color:#8b9b9d;
+  font-size:10px;
+  letter-spacing:.08em;
+  transition:opacity .2s ease;
+}
+.locator-dot{
+  width:7px;height:7px;border-radius:50%;background:#39c8b5;
+  box-shadow:0 0 0 4px rgba(57,200,181,.10);
+}
+.reader .canvas-locator{opacity:0}
+
+
+/* =========================================================
+   EDGE EXPLORATION CUES
+   ========================================================= */
+.edge-glow{
+  position:absolute;
+  z-index:7;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .24s ease;
+}
+.edge-glow.left,.edge-glow.right{
+  top:10%;bottom:10%;width:92px;
+}
+.edge-glow.left{
+  left:0;
+  background:linear-gradient(to right,rgba(57,200,181,.10),transparent);
+}
+.edge-glow.right{
+  right:0;
+  background:linear-gradient(to left,rgba(57,200,181,.10),transparent);
+}
+.edge-glow.top,.edge-glow.bottom{
+  left:14%;right:14%;height:70px;
+}
+.edge-glow.top{
+  top:0;
+  background:linear-gradient(to bottom,rgba(57,200,181,.055),transparent);
+}
+.edge-glow.bottom{
+  bottom:0;
+  background:linear-gradient(to top,rgba(57,200,181,.055),transparent);
+}
+.edge-glow.active{opacity:1}
+.reader .edge-glow{opacity:0!important}
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+.card{
+  position:absolute;
+  border:1px solid var(--line);
+  background:var(--glass);
+  backdrop-filter:blur(24px) saturate(116%);
+  -webkit-backdrop-filter:blur(24px) saturate(116%);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.home-card{
+  transition:
+    opacity .14s ease,
+    filter .14s ease,
+    box-shadow .28s ease,
+    transform .28s var(--ease);
+}
+.home-card:hover{
+  box-shadow:0 34px 82px rgba(54,75,69,.13);
+  transform:translateY(-2px);
+}
+
+/* world positions: deliberately larger than viewport */
+.nav-card{
+  left:470px;top:250px;width:290px;height:435px;padding:22px 20px;z-index:10;
+}
+.visual-card{
+  left:790px;top:125px;width:340px;height:165px;padding:18px;overflow:hidden;
+}
+.hero-card{
+  left:785px;top:318px;width:360px;height:275px;padding:28px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+}
+.clock-card{
+  left:1170px;top:210px;width:250px;height:120px;
+  display:flex;align-items:center;justify-content:center;
+}
+.calendar-card{
+  left:1170px;top:360px;width:300px;height:280px;padding:24px;
+}
+.recent-card{
+  left:465px;top:715px;width:260px;height:140px;padding:22px;
+}
+.guide-card{
+  left:760px;top:665px;width:270px;height:136px;padding:22px;cursor:pointer;
+}
+.status-card{
+  left:1045px;top:670px;width:260px;height:66px;padding:15px 19px;display:flex;align-items:center;
+}
+.search-card{
+  left:1325px;top:670px;width:140px;height:66px;padding:0 15px;
+  display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+}
+
+/* Right-side region: announcement area sits in same canvas */
+.notice-index-card{
+  left:1510px;top:245px;width:240px;height:395px;padding:23px 20px;
+}
+.notice-main-card{
+  left:1455px;top:655px;width:435px;height:260px;padding:28px 32px;overflow:hidden;
+}
+.notice-orb-card{
+  left:1485px;top:105px;width:290px;height:108px;padding:17px;
+  display:flex;align-items:center;gap:16px;
+}
+
+/* Left-side extra docs / shortcuts */
+.quick-card{
+  left:125px;top:360px;width:285px;height:178px;padding:24px;
+}
+.changelog-card{
+  left:165px;top:580px;width:270px;height:138px;padding:21px;
+}
+.api-mini-card{
+  left:180px;top:185px;width:270px;height:138px;padding:21px;
+}
+
+/* Brand/Nav */
+.brand-row{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.brand-mark{
+  width:44px;height:44px;border-radius:50%;
+  background:
+    radial-gradient(circle at 34% 30%,#fff5a2 0 22%,transparent 23%),
+    linear-gradient(145deg,#e8fff4,#bfe8de);
+  display:grid;place-items:center;font-size:18px;font-weight:850;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.84);
+}
+.brand-name{font-weight:760}
+.brand-sub{font-size:11px;color:#2ab3a4;margin-top:2px}
+.section-label{font-size:11px;letter-spacing:.14em;color:#95a2a4;margin:4px 4px 12px}
+.nav-items{display:flex;flex-direction:column;gap:6px;position:relative}
+.nav-highlight{
+  position:absolute;left:0;right:0;height:50px;border-radius:18px;
+  background:rgba(255,255,255,.82);box-shadow:0 10px 24px rgba(76,96,91,.07);
+  top:0;transition:top .42s cubic-bezier(.2,.9,.25,1.2),transform .42s cubic-bezier(.2,.9,.25,1.2);
+}
+.nav-btn{
+  position:relative;z-index:2;border:0;background:transparent;width:100%;height:50px;border-radius:18px;
+  display:flex;align-items:center;gap:12px;padding:0 16px;text-align:left;cursor:pointer;
+}
+.nav-btn svg{width:18px;height:18px;color:#91a0a2;transition:.22s}
+.nav-btn:hover svg,.nav-btn.active svg{color:#21b8a6}
+.nav-btn.active{font-weight:700}
+
+/* hero/visual */
+.visual-scene{
+  position:relative;height:100%;border-radius:24px;overflow:hidden;
+  background:
+    radial-gradient(circle at 18% 25%,rgba(61,200,183,.55),transparent 20%),
+    radial-gradient(circle at 78% 72%,rgba(255,221,116,.55),transparent 22%),
+    linear-gradient(135deg,rgba(255,255,255,.82),rgba(230,246,242,.68));
+}
+.ring{position:absolute;inset:36px 64px;border:1px solid rgba(30,134,124,.20);border-radius:999px;transform:rotate(-14deg)}
+.dot{position:absolute;border-radius:50%;box-shadow:0 14px 32px rgba(45,108,103,.18)}
+.dot.big{left:140px;top:38px;width:64px;height:64px;background:linear-gradient(145deg,#1d3235,#47c9b7)}
+.dot.a{left:62px;top:86px;width:24px;height:24px;background:linear-gradient(145deg,#fff3a2,#efc764)}
+.dot.b{right:62px;top:48px;width:20px;height:20px;background:linear-gradient(145deg,#defff7,#7de5ca)}
+.visual-tag{position:absolute;left:20px;bottom:18px;font-size:11px;letter-spacing:.16em;color:#799193}
+.orb{
+  width:94px;height:94px;border-radius:50%;display:grid;place-items:center;margin-bottom:18px;
+  background:
+    radial-gradient(circle at 34% 28%,#fff39a 0 21%,transparent 22%),
+    linear-gradient(145deg,#effff4,#c0eadc);
+  box-shadow:0 14px 34px rgba(92,132,110,.12),inset 0 0 0 1px rgba(255,255,255,.8);
+  font-size:31px;font-weight:900;letter-spacing:-.08em;
+}
+.hero-card h1{font-size:28px;letter-spacing:-.04em;margin:0 0 8px}
+.hero-card p{margin:0;font-size:14px;line-height:1.65;color:#6d8082}
+.accent{color:#29bba8;font-weight:700}
+
+/* time */
+.clock{font-family:"SFMono-Regular",Consolas,ui-monospace,monospace;font-size:38px;letter-spacing:-.07em;color:#284446}
+.date-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;font-size:12px;color:#7f9093}
+.week,.days{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:9px 4px;font-size:12px}
+.week{color:#90a2a5;margin-bottom:12px}
+.day{height:28px;display:grid;place-items:center;border-radius:9px;color:#758689}
+.day.today{background:#30c4b1;color:#fff;font-weight:700;box-shadow:0 8px 22px rgba(48,196,177,.26)}
+
+/* misc cards */
+.mini-title{font-size:11px;letter-spacing:.11em;color:#92a0a2;margin-bottom:12px}
+.recent-title{font-size:14px;font-weight:700;line-height:1.35}
+.recent-meta{margin-top:8px;font-size:11px;color:#95a1a3}
+.guide-row{display:flex;gap:12px;align-items:center}
+.guide-icon{width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.72);display:grid;place-items:center;font-weight:850;color:#23b2a1}
+.guide-title{font-weight:700;font-size:14px}.guide-sub{font-size:11px;color:#90a0a1;margin-top:4px}
+.status-dot{width:9px;height:9px;border-radius:50%;background:#41d09e;box-shadow:0 0 0 5px rgba(65,208,158,.12);margin-right:12px}
+.status-text{font-size:13px}.status-text small{display:block;color:#97a4a5;margin-top:2px}
+.search-card span{font-size:12px;color:#788a8d}.search-card kbd{font-size:10px;color:#93a1a3}
+
+/* left region */
+.quick-card h3,.api-mini-card h3,.changelog-card h3{margin:0;font-size:21px;letter-spacing:-.03em}
+.quick-card p,.api-mini-card p,.changelog-card p{font-size:12px;color:#7b8d8f;line-height:1.7;margin:9px 0 0}
+.quick-links{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap}
+.quick-links span{padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.60);font-size:10px;color:#6f8385}
+
+/* announcement region */
+.notice-board-card{
+  left:1490px;
+  top:232px;
+  width:560px;
+  height:430px;
+  padding:0;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(126,232,214,.18), transparent 25%),
+    linear-gradient(180deg, rgba(245,253,251,.95), rgba(232,247,243,.93));
+  border:1px solid rgba(255,255,255,.82);
+  box-shadow:
+    0 30px 78px rgba(52,75,69,.12),
+    inset 0 0 0 1px rgba(255,255,255,.46);
+}
+
+/* top translucent tape */
+.notice-board-card::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:10px;
+  width:96px;
+  height:20px;
+  transform:translateX(-50%) rotate(-1.5deg);
+  border-radius:6px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.58), rgba(180,231,221,.30));
+  border:1px solid rgba(255,255,255,.46);
+  box-shadow:0 5px 14px rgba(59,116,105,.07);
+  opacity:.92;
+  z-index:4;
+}
+
+/* folded corner */
+.notice-board-card::after{
+  content:"";
+  position:absolute;
+  right:0;
+  bottom:0;
+  width:44px;
+  height:44px;
+  background:
+    linear-gradient(135deg,
+      rgba(205,239,232,.15) 0 49%,
+      rgba(194,231,224,.72) 50% 74%,
+      rgba(238,250,247,.96) 75% 100%);
+  clip-path:polygon(0 100%,100% 0,100% 100%);
+  filter:drop-shadow(-5px -5px 10px rgba(62,103,94,.07));
+  pointer-events:none;
+}
+
+.notice-note{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  padding:30px 22px 18px;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(61,176,157,0) 0px,
+      rgba(61,176,157,0) 28px,
+      rgba(68,177,158,.07) 29px
+    );
+}
+
+.notice-note-head{
+  padding:8px 10px 13px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px 18px;
+  align-items:end;
+}
+
+.notice-note-kicker{
+  grid-column:1 / -1;
+  font-size:10px;
+  letter-spacing:.17em;
+  color:#7fa29f;
+}
+
+.notice-note-head h2{
+  margin:0;
+  font-size:25px;
+  letter-spacing:-.04em;
+  color:#233d3e;
+}
+
+.notice-note-desc{
+  margin:0;
+  max-width:260px;
+  font-size:10.5px;
+  line-height:1.55;
+  text-align:right;
+  color:#85999a;
+}
+
+.notice-note-divider{
+  height:1px;
+  background:
+    linear-gradient(to right,
+      rgba(58,185,167,.24),
+      rgba(58,185,167,.10) 62%,
+      transparent);
+  margin:0 8px 12px;
+}
+
+.notice-note-layout{
+  display:grid;
+  grid-template-columns:160px minmax(0,1fr);
+  gap:14px;
+  min-height:0;
+  flex:1;
+}
+
+.notice-sidebar{
+  position:relative;
+  padding:2px 0 2px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.notice-side-item{
+  position:relative;
+  border:0;
+  border-radius:15px;
+  padding:11px 10px 10px 13px;
+  text-align:left;
+  background:rgba(255,255,255,.30);
+  color:#355456;
+  cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(143,217,204,.16);
+  transition:
+    background .22s ease,
+    transform .24s var(--ease),
+    box-shadow .24s ease;
+}
+
+.notice-side-item:hover{
+  background:rgba(255,255,255,.52);
+  transform:translateX(2px);
+}
+
+.notice-side-item.active{
+  background:rgba(255,255,255,.84);
+  box-shadow:
+    0 9px 24px rgba(56,78,72,.06),
+    inset 0 0 0 1px rgba(76,195,177,.32);
+}
+
+.notice-side-item.active::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:12px;
+  bottom:12px;
+  width:3px;
+  border-radius:999px;
+  background:linear-gradient(to bottom,#8ce8da,#35bba8);
+  box-shadow:0 0 12px rgba(57,200,181,.30);
+}
+
+.notice-side-num{
+  display:block;
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-size:9px;
+  color:#8da7a5;
+  margin-bottom:6px;
+}
+
+.notice-side-title{
+  display:block;
+  font-size:12px;
+  font-weight:740;
+  line-height:1.35;
+}
+
+.notice-side-date{
+  display:block;
+  margin-top:6px;
+  font-size:9px;
+  color:#95a8a8;
+}
+
+.notice-body{
+  position:relative;
+  min-width:0;
+  border-radius:19px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,.40));
+  box-shadow:
+    inset 0 0 0 1px rgba(144,218,206,.16),
+    0 12px 30px rgba(71,101,95,.04);
+  padding:17px 18px 15px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.notice-body::before{
+  content:"";
+  position:absolute;
+  width:135px;
+  height:135px;
+  right:-58px;
+  top:-54px;
+  border-radius:50%;
+  background:rgba(57,200,181,.10);
+  filter:blur(30px);
+  pointer-events:none;
+}
+
+.notice-body-top{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.notice-type{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  height:26px;
+  padding:0 10px;
+  border-radius:999px;
+  background:rgba(57,200,181,.11);
+  color:#259b8b;
+  font-size:9.5px;
+  font-weight:760;
+}
+
+.notice-type::before{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#39c8b5;
+  box-shadow:0 0 0 4px rgba(57,200,181,.09);
+}
+
+.notice-count{
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-size:9px;
+  color:#8ba6a5;
+  padding-top:5px;
+}
+
+.notice-body h3{
+  position:relative;
+  z-index:2;
+  margin:15px 0 0;
+  max-width:320px;
+  font-size:22px;
+  line-height:1.26;
+  letter-spacing:-.035em;
+  color:#274143;
+}
+
+.notice-copy{
+  position:relative;
+  z-index:2;
+  margin-top:12px;
+  font-size:11.5px;
+  line-height:1.78;
+  color:#62797b;
+}
+
+.notice-sticky-footer{
+  position:relative;
+  z-index:2;
+  margin-top:auto;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  padding-top:16px;
+}
+
+.notice-meta{
+  display:flex;
+  gap:11px;
+  flex-wrap:wrap;
+}
+
+.notice-meta span{
+  font-size:9px;
+  letter-spacing:.05em;
+  color:#8ca0a0;
+}
+
+.notice-pin{
+  position:relative;
+  width:28px;
+  height:28px;
+  flex:none;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255,255,255,.92), transparent 26%),
+    linear-gradient(145deg,#8de6d8,#34baa7);
+  box-shadow:
+    0 9px 18px rgba(57,200,181,.17),
+    inset 0 0 0 1px rgba(255,255,255,.44);
+}
+
+.notice-pin::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:4px;
+  height:4px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:rgba(31,112,101,.48);
+}
+
+/* =========================================================
+   READER
+   ========================================================= */
+.workspace{
+  position:absolute;left:28px;right:28px;top:106px;bottom:26px;
+  display:grid;grid-template-columns:360px minmax(0,1fr);gap:18px;
+  opacity:0;pointer-events:none;transform:translateY(12px);
+  transition:opacity .28s ease .14s,transform .46s var(--ease) .14s;
+  z-index:20;
+}
+.reader .workspace{opacity:1;pointer-events:auto;transform:none}
+.reader .canvas-viewport{pointer-events:none}
+.reader .home-card:not(.nav-card){opacity:0;pointer-events:none}
+.reader .canvas-world{transition:none!important}
+
+/* nav is temporarily promoted to root before reader morph */
+.nav-card.promoted{
+  z-index:40;
+  transition:
+    left .72s var(--ease),
+    top .72s var(--ease),
+    width .72s var(--ease),
+    height .72s var(--ease),
+    border-radius .5s var(--ease),
+    background .4s ease;
+}
+.reader .nav-card.promoted{
+  left:28px!important;top:22px!important;width:680px!important;height:66px!important;padding:0 12px;border-radius:22px;
+  display:flex;align-items:center;pointer-events:auto;
+}
+.reader .nav-card.promoted .brand-row{margin:0 14px 0 0}
+.reader .nav-card.promoted .brand-mark{width:42px;height:42px;border-radius:15px;cursor:pointer}
+.reader .nav-card.promoted .brand-name,
+.reader .nav-card.promoted .brand-sub,
+.reader .nav-card.promoted .section-label{display:none}
+.reader .nav-card.promoted .nav-items{flex-direction:row;gap:5px;align-items:center;flex:1}
+.reader .nav-card.promoted .nav-btn{width:108px;height:44px;padding:0 14px;justify-content:center;border-radius:15px}
+.reader .nav-card.promoted .nav-btn span{display:block;font-size:12px;white-space:nowrap}
+.reader .nav-card.promoted .nav-highlight{top:3px;left:0;right:auto;width:108px;height:44px;border-radius:15px;transform:translateX(0)}
+.reader .nav-card.promoted .nav-highlight[data-index="1"]{transform:translateX(113px)}
+.reader .nav-card.promoted .nav-highlight[data-index="2"]{transform:translateX(226px)}
+.reader .nav-card.promoted .nav-highlight[data-index="3"]{transform:translateX(339px)}
+.reader .nav-card.promoted .nav-highlight[data-index="4"]{transform:translateX(452px)}
+
+.stack,.doc{
+  border:1px solid var(--line);background:rgba(255,255,255,.53);
+  backdrop-filter:blur(24px) saturate(116%);box-shadow:var(--shadow);
+}
+.stack{border-radius:30px;padding:24px 24px 24px 28px;overflow:auto}
+.stack .eyebrow{font-size:10px;letter-spacing:.16em;color:#93a2a4}
+.stack h2{margin:9px 0 6px;font-size:23px;letter-spacing:-.035em}
+.stack .desc{font-size:12px;color:#809294;line-height:1.6;margin-bottom:22px}
+.chapter{position:relative;border-radius:22px;margin-bottom:12px;overflow:visible}
+.chapter-header{
+  position:relative;display:flex;align-items:center;gap:12px;border:0;width:100%;cursor:pointer;text-align:left;
+  padding:16px 18px;border-radius:22px;background:rgba(255,255,255,.38);color:var(--ink);
+  border:1px solid rgba(255,255,255,.45);box-shadow:0 12px 28px rgba(59,79,73,.04);
+}
+.chapter.active .chapter-header{background:linear-gradient(180deg,#26383b,#1e2e30);color:#fff;border-color:rgba(255,255,255,.06)}
+.chapter-icon{width:18px;height:18px;color:#7e9396;flex:none}
+.chapter.active .chapter-icon{color:var(--accent-soft)}
+.chapter-title{font-size:15px;font-weight:760;flex:1}
+.chapter-arrow{font-size:13px;color:#8ea0a2;transition:transform .28s ease}
+.chapter.active .chapter-arrow{transform:rotate(180deg);color:var(--accent-soft)}
+.chapter-body{position:relative;max-height:0;overflow:hidden;transition:max-height .42s var(--ease),padding .35s ease;padding:0 0 0 18px}
+.chapter.active .chapter-body{max-height:380px;padding:14px 0 4px 18px}
+.sub-list{position:relative;padding-left:22px;isolation:isolate}
+.sub-item{
+  position:relative;margin:6px 0;padding:10px 14px 10px 16px;border:0;width:100%;text-align:left;border-radius:14px;
+  background:transparent;color:#66797c;cursor:pointer;transition:.26s ease;font-size:14px;
+}
+.sub-item:hover{background:rgba(255,255,255,.48);color:#31494b}
+.sub-item.active{
+  background:rgba(255,255,255,.80);color:#1f3537;font-weight:760;
+  box-shadow:0 8px 24px rgba(58,77,71,.055),inset 0 0 0 1px rgba(57,200,181,.08);
+}
+
+/* Active injection beam */
+.flow-svg{position:absolute;left:-10px;top:-16px;width:52px;height:calc(100% + 22px);overflow:visible;pointer-events:none;z-index:3}
+.beam-track{fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;opacity:.92}
+.beam-stream{
+  fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:7 93;stroke-dashoffset:100;
+  animation:beamInject 1.4s linear infinite;vector-effect:non-scaling-stroke;
+}
+.beam-stream.secondary{animation-delay:-.70s;opacity:.82}
+.beam-spark{
+  fill:none;stroke:rgba(244,255,252,.99);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:2.1 97.9;stroke-dashoffset:100;animation:beamInject .70s linear infinite;vector-effect:non-scaling-stroke;
+}
+@keyframes beamInject{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+.beam-head{fill:#f7fffd;stroke:#94f2e4;stroke-width:.65}
+.beam-head.secondary{fill:#83eadb;stroke:none;opacity:.84}
+.beam-source{fill:#f2fffd;stroke:#89edde;stroke-width:.8}
+.beam-target{fill:#f8fffe;stroke:#39c8b5;stroke-width:1;animation:targetBreathe 1.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes targetBreathe{0%,100%{opacity:.70;transform:scale(.88)}50%{opacity:1;transform:scale(1.06)}}
+
+/* document */
+.doc{position:relative;border-radius:34px;overflow:auto;padding:54px 64px 84px}
+.doc-inner{max-width:840px;margin:0 auto}
+.breadcrumb{font-size:11px;color:#93a1a3;margin-bottom:34px}
+.doc h1{font-size:50px;letter-spacing:-.055em;margin:0 0 14px}
+.lead{font-size:17px;color:#6d8082;line-height:1.7;max-width:690px}
+.pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+.pill{padding:9px 12px;border-radius:999px;background:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.82);font-size:11px;color:#6f8385}
+.rule{height:1px;background:rgba(48,66,63,.08);margin:34px 0}
+.doc h3{font-size:24px;margin:32px 0 10px}
+.doc p{font-size:14px;line-height:1.85;color:#5f7375}
+.code{margin:22px 0;border-radius:22px;background:#1d2d2f;color:#dfeeea;overflow:hidden;box-shadow:0 18px 45px rgba(24,46,48,.12)}
+.code-head{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.07);font-size:11px;color:rgba(255,255,255,.45)}
+.code pre{margin:0;padding:20px 22px;overflow:auto;font-size:12px;line-height:1.7}
+.next-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+.next-card{border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.52);border-radius:20px;padding:16px 18px;cursor:pointer}
+.next-card strong{display:block;font-size:14px}
+.next-card span{display:block;margin-top:6px;font-size:12px;color:#788b8e}
+</style>
+</head>
+<body>
+<div class="app portal" id="app">
+  <div class="noise"></div>
+
+  <div class="canvas-viewport" id="canvasViewport">
+    <div class="canvas-world" id="canvasWorld">
+
+      <!-- LEFT REGION -->
+      <section class="card home-card api-mini-card">
+        <div class="mini-title">DEVELOPER</div>
+        <h3>API Playground</h3>
+        <p>快速查看 Base URL、鉴权方式与常用接口。</p>
+        <div class="quick-links"><span>/v1/responses</span><span>Bearer</span></div>
+      </section>
+
+      <section class="card home-card quick-card">
+        <div class="mini-title">QUICK ACCESS</div>
+        <h3>从这里开始</h3>
+        <p>第一次使用 Nexus，可以从账号、API Key 和第一次请求开始。</p>
+        <div class="quick-links">
+          <span>Create Key</span><span>First Request</span><span>Models</span>
+        </div>
+      </section>
+
+      <section class="card home-card changelog-card">
+        <div class="mini-title">CHANGELOG</div>
+        <h3>Documentation OS</h3>
+        <p>首页现在是一张空间画布，而不是分页 Carousel。</p>
+      </section>
+
+      <!-- MAIN CLUSTER -->
+      <section class="card home-card nav-card" id="navCard">
+        <div class="brand-row">
+          <div class="brand-mark" id="brandMark" title="返回主页">N</div>
+          <div>
+            <div class="brand-name">Nexus Docs</div>
+            <div class="brand-sub">Documentation OS</div>
+          </div>
+        </div>
+
+        <div class="section-label">DOCUMENTATION</div>
+
+        <div class="nav-items">
+          <div class="nav-highlight" id="navHighlight" data-index="0"></div>
+
+          <button class="nav-btn active" data-space="start" data-index="0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 9v11h16V9l-8-6Z"/><path d="M9 20v-7h6v7"/></svg>
+            <span>快速开始</span>
+          </button>
+
+          <button class="nav-btn" data-space="api" data-index="1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/></svg>
+            <span>API 文档</span>
+          </button>
+
+          <button class="nav-btn" data-space="models" data-index="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>
+            <span>模型说明</span>
+          </button>
+
+          <button class="nav-btn" data-space="apps" data-index="3">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12"/><path d="M2 18h20v2H2z"/><path d="M8 9h8M8 13h5"/></svg>
+            <span>应用接入</span>
+          </button>
+
+          <button class="nav-btn" data-space="vip" data-index="4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.4 4.2L19 8l-3.2 3.2.7 4.8L12 13.8 7.5 16l.8-4.8L5 8l4.6-.8L12 3Z"/></svg>
+            <span>充值与 VIP</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="card home-card visual-card">
+        <div class="visual-scene">
+          <div class="ring"></div>
+          <div class="dot big"></div>
+          <div class="dot a"></div>
+          <div class="dot b"></div>
+          <div class="visual-tag">NEXUS / KNOWLEDGE CORE</div>
+        </div>
+      </section>
+
+      <section class="card home-card hero-card">
+        <div class="orb">N</div>
+        <h1>Good Afternoon</h1>
+        <p>Welcome to <span class="accent">Nexus</span> docs.<br/>Move through the knowledge space.</p>
+      </section>
+
+      <section class="card home-card clock-card">
+        <div id="clock" class="clock"></div>
+      </section>
+
+      <section class="card home-card calendar-card">
+        <div class="date-head">
+          <span id="calendarTitle"></span>
+          <span>NEXUS TIME</span>
+        </div>
+        <div class="week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+        <div id="calendarDays" class="days"></div>
+      </section>
+
+      <section class="card home-card recent-card">
+        <div class="mini-title">CONTINUE READING</div>
+        <div class="recent-title">Authentication</div>
+        <div class="recent-meta">API 文档 · 4 min</div>
+      </section>
+
+      <section class="card home-card guide-card" id="guideCard">
+        <div class="mini-title">RECOMMENDED</div>
+        <div class="guide-row">
+          <div class="guide-icon">&gt;_</div>
+          <div>
+            <div class="guide-title">Claude Code</div>
+            <div class="guide-sub">Connect to Nexus →</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card home-card status-card">
+        <div class="status-dot"></div>
+        <div class="status-text">All systems operational<small>Nexus Status</small></div>
+      </section>
+
+      <section class="card home-card search-card">
+        <span>⌕ Search</span><kbd>⌘ K</kbd>
+      </section>
+
+      <!-- RIGHT / NOTICE REGION -->
+      <section class="card home-card notice-board-card">
+        <div class="notice-note">
+          <div class="notice-note-head">
+            <div class="notice-note-kicker">NEXUS / NOTICE NOTE</div>
+            <h2>公告中心</h2>
+            <div class="notice-note-desc">站点更新、维护通知与活动说明。</div>
+          </div>
+
+          <div class="notice-note-divider"></div>
+
+          <div class="notice-note-layout">
+            <div class="notice-sidebar" id="noticeList"></div>
+
+            <div class="notice-body" id="noticeContent">
+              <div class="notice-body-top">
+                <div class="notice-type" id="noticeType"></div>
+                <div class="notice-count" id="noticeCount"></div>
+              </div>
+
+              <h3 id="noticeTitle"></h3>
+              <div class="notice-copy" id="noticeCopy"></div>
+
+              <div class="notice-sticky-footer">
+                <div class="notice-meta">
+                  <span id="noticeDate"></span>
+                  <span id="noticeTag"></span>
+                </div>
+                <div class="notice-pin" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <div class="canvas-vignette"></div>
+  </div>
+
+  <div class="edge-glow left" id="edgeGlowLeft"></div>
+  <div class="edge-glow right" id="edgeGlowRight"></div>
+  <div class="edge-glow top" id="edgeGlowTop"></div>
+  <div class="edge-glow bottom" id="edgeGlowBottom"></div>
+
+  <div class="canvas-locator">
+    <span class="locator-dot"></span>
+    <span>EXPLORE FROM THE EDGES</span>
+  </div>
+
+  <!-- READER -->
+  <div class="workspace">
+    <aside class="stack">
+      <div class="eyebrow">DOCUMENTATION SPACE</div>
+      <h2 id="spaceTitle"></h2>
+      <div id="spaceDesc" class="desc"></div>
+      <div id="chapterList"></div>
+    </aside>
+
+    <article class="doc" id="doc">
+      <div class="doc-inner">
+        <div id="breadcrumb" class="breadcrumb"></div>
+        <h1 id="docTitle"></h1>
+        <div id="docLead" class="lead"></div>
+
+        <div class="pill-row">
+          <div class="pill">Nexus Style</div>
+          <div class="pill">Nested Documents</div>
+          <div class="pill">Spatial Canvas</div>
+        </div>
+
+        <div class="rule"></div>
+
+        <h3>Overview</h3>
+        <p id="docText"></p>
+
+        <div class="code">
+          <div class="code-head">Terminal</div>
+          <pre id="codeBlock"></pre>
+        </div>
+
+        <h3>Next steps</h3>
+        <div class="next-row" id="nextRow"></div>
+      </div>
+    </article>
+  </div>
+</div>
+
+<script>
+const app = document.getElementById('app');
+const viewport = document.getElementById('canvasViewport');
+const world = document.getElementById('canvasWorld');
+const navCard = document.getElementById('navCard');
+const navHighlight = document.getElementById('navHighlight');
+const navButtons = [...document.querySelectorAll('.nav-btn')];
+const brandMark = document.getElementById('brandMark');
+
+const WORLD = { width:2060, height:960 };
+
+let currentX = 0;
+let currentY = 0;
+let velocityX = 0;
+let velocityY = 0;
+let targetVelocityX = 0;
+let targetVelocityY = 0;
+let canvasEnabled = true;
+let canvasInitialized = false;
+let lastFrame = performance.now();
+
+const edgeGlow = {
+  left: document.getElementById('edgeGlowLeft'),
+  right: document.getElementById('edgeGlowRight'),
+  top: document.getElementById('edgeGlowTop'),
+  bottom: document.getElementById('edgeGlowBottom')
+};
+
+function getCanvasBounds(){
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const overflowX = Math.max(0, WORLD.width - vw);
+  const overflowY = Math.max(0, WORLD.height - vh);
+
+  return {
+    vw, vh,
+    minX:-overflowX,
+    maxX:0,
+    minY:-overflowY,
+    maxY:0,
+    overflowX, overflowY
+  };
+}
+
+function smoothstep01(t){
+  t = Math.max(0, Math.min(1, t));
+  return t * t * (3 - 2 * t);
+}
+
+function edgeAxisStrength(pos, size, ratio){
+  const zone = size * ratio;
+
+  if(pos < zone){
+    return -smoothstep01((zone - pos) / zone);
+  }
+
+  if(pos > size - zone){
+    return smoothstep01((pos - (size - zone)) / zone);
+  }
+
+  return 0;
+}
+
+function boundaryFactor(position, min, max, velocity){
+  const slowZone = 100;
+
+  if(velocity < 0){
+    return smoothstep01((position - min) / slowZone);
+  }
+
+  if(velocity > 0){
+    return smoothstep01((max - position) / slowZone);
+  }
+
+  return 1;
+}
+
+function updateEdgeGlow(sx, sy){
+  const bounds = getCanvasBounds();
+
+  edgeGlow.left?.classList.toggle('active', sx < -.05 && currentX < bounds.maxX - 2);
+  edgeGlow.right?.classList.toggle('active', sx > .05 && currentX > bounds.minX + 2);
+  edgeGlow.top?.classList.toggle('active', sy < -.05 && currentY < bounds.maxY - 2);
+  edgeGlow.bottom?.classList.toggle('active', sy > .05 && currentY > bounds.minY + 2);
+}
+
+function updateTargetVelocity(clientX, clientY){
+  if(!canvasEnabled || app.classList.contains('reader')) return;
+
+  const {vw, vh} = getCanvasBounds();
+  const sx = edgeAxisStrength(clientX, vw, .17);
+  const sy = edgeAxisStrength(clientY, vh, .12);
+
+  targetVelocityX = -sx * 520;
+  targetVelocityY = -sy * 220;
+
+  updateEdgeGlow(sx, sy);
+}
+
+function stopCanvasMotion(){
+  targetVelocityX = 0;
+  targetVelocityY = 0;
+
+  edgeGlow.left?.classList.remove('active');
+  edgeGlow.right?.classList.remove('active');
+  edgeGlow.top?.classList.remove('active');
+  edgeGlow.bottom?.classList.remove('active');
+}
+
+function centerCanvas(immediate=false){
+  const {overflowX, overflowY} = getCanvasBounds();
+
+  const startX = -overflowX * .45;
+  const startY = -overflowY * .42;
+
+  if(immediate || !canvasInitialized){
+    currentX = startX;
+    currentY = startY;
+    velocityX = 0;
+    velocityY = 0;
+    targetVelocityX = 0;
+    targetVelocityY = 0;
+    world.style.transform = `translate3d(${currentX}px,${currentY}px,0)`;
+    canvasInitialized = true;
+  }
+}
+
+function animateCanvas(now){
+  const dt = Math.min(.034, (now - lastFrame) / 1000);
+  lastFrame = now;
+
+  if(canvasEnabled && !app.classList.contains('reader')){
+    const bounds = getCanvasBounds();
+
+    const bx = boundaryFactor(currentX, bounds.minX, bounds.maxX, targetVelocityX);
+    const by = boundaryFactor(currentY, bounds.minY, bounds.maxY, targetVelocityY);
+
+    const desiredX = targetVelocityX * bx;
+    const desiredY = targetVelocityY * by;
+
+    const accel = 1 - Math.exp(-7.5 * dt);
+    const brake = 1 - Math.exp(-11.5 * dt);
+
+    velocityX += (desiredX - velocityX) * (Math.abs(desiredX) > .5 ? accel : brake);
+    velocityY += (desiredY - velocityY) * (Math.abs(desiredY) > .5 ? accel : brake);
+
+    if(Math.abs(desiredX) < .5 && Math.abs(velocityX) < 2) velocityX = 0;
+    if(Math.abs(desiredY) < .5 && Math.abs(velocityY) < 2) velocityY = 0;
+
+    currentX += velocityX * dt;
+    currentY += velocityY * dt;
+
+    currentX = Math.max(bounds.minX, Math.min(bounds.maxX, currentX));
+    currentY = Math.max(bounds.minY, Math.min(bounds.maxY, currentY));
+
+    world.style.transform = `translate3d(${currentX}px,${currentY}px,0)`;
+  }
+
+  requestAnimationFrame(animateCanvas);
+}
+
+viewport.addEventListener('mousemove', event => {
+  updateTargetVelocity(event.clientX, event.clientY);
+});
+
+viewport.addEventListener('mouseleave', stopCanvasMotion);
+window.addEventListener('blur', stopCanvasMotion);
+
+window.addEventListener('resize', () => {
+  const bounds = getCanvasBounds();
+
+  currentX = Math.max(bounds.minX, Math.min(bounds.maxX, currentX));
+  currentY = Math.max(bounds.minY, Math.min(bounds.maxY, currentY));
+
+  world.style.transform = `translate3d(${currentX}px,${currentY}px,0)`;
+});
+
+centerCanvas(true);
+requestAnimationFrame(animateCanvas);
+
+/* =========================================================
+   HOME DATA
+   ========================================================= */
+const ANNOUNCEMENTS = [
+  {
+    type:'系统公告',
+    short:'空间画布',
+    title:'Nexus Docs 首页升级为空间画布。',
+    body:'所有卡片都位于同一个连续空间。将鼠标移动到窗口边缘，即可平滑探索超出当前视口的内容。',
+    date:'2026 / 09 / 24',
+    tag:'IMPORTANT'
+  },
+  {
+    type:'版本更新',
+    short:'导航更新',
+    title:'文档阅读态继续保留 Morph 导航。',
+    body:'进入文档后，空间画布冻结并淡出其他卡片，导航卡平滑变形成顶部阅读 Dock。',
+    date:'2026 / 09 / 24',
+    tag:'UI UPDATE'
+  },
+  {
+    type:'活动预告',
+    short:'VIP 预告',
+    title:'充值、VIP、签到与勋章说明将形成独立内容区域。',
+    body:'这些内容既可以从文档导航进入，也可以作为空间画布上的入口卡片存在。',
+    date:'COMING SOON',
+    tag:'PREVIEW'
+  }
+];
+
+let announceIndex = 0;
+
+function renderAnnouncement(){
+  const item = ANNOUNCEMENTS[announceIndex];
+  const list = document.getElementById('noticeList');
+  const content = document.getElementById('noticeContent');
+
+  list.innerHTML = ANNOUNCEMENTS.map((notice,index)=>`
+    <button class="notice-side-item ${index===announceIndex?'active':''}" data-notice-index="${index}">
+      <span class="notice-side-num">${String(index+1).padStart(2,'0')}</span>
+      <span class="notice-side-title">${notice.short}</span>
+      <span class="notice-side-date">${notice.date}</span>
+    </button>
+  `).join('');
+
+  list.querySelectorAll('.notice-side-item').forEach(button=>{
+    button.addEventListener('click',()=>{
+      announceIndex = Number(button.dataset.noticeIndex);
+      renderAnnouncement();
+    });
+  });
+
+  document.getElementById('noticeType').textContent = item.type;
+  document.getElementById('noticeCount').textContent =
+    `${String(announceIndex + 1).padStart(2,'0')} / ${String(ANNOUNCEMENTS.length).padStart(2,'0')}`;
+  document.getElementById('noticeTitle').textContent = item.title;
+  document.getElementById('noticeCopy').textContent = item.body;
+  document.getElementById('noticeDate').textContent = item.date;
+  document.getElementById('noticeTag').textContent = item.tag;
+
+  content.animate(
+    [{opacity:.35, transform:'translateX(8px)'}, {opacity:1, transform:'translateX(0)'}],
+    {duration:260, easing:'cubic-bezier(.22,1,.36,1)'}
+  );
+}
+renderAnnouncement();
+
+
+/* =========================================================
+   CLOCK / CALENDAR
+   ========================================================= */
+function setClock(){
+  const d=new Date();
+  document.getElementById('clock').textContent=
+    [d.getHours(),d.getMinutes(),d.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+}
+setClock();
+setInterval(setClock,1000);
+
+function renderCalendar(){
+  const d=new Date();
+  const y=d.getFullYear(),m=d.getMonth(),today=d.getDate();
+  document.getElementById('calendarTitle').textContent=`${y} / ${m+1}`;
+
+  const first=new Date(y,m,1).getDay();
+  const offset=first===0?6:first-1;
+  const count=new Date(y,m+1,0).getDate();
+  const box=document.getElementById('calendarDays');
+  box.innerHTML='';
+
+  for(let i=0;i<offset;i++){
+    const s=document.createElement('span');
+    s.className='day';
+    box.appendChild(s);
+  }
+
+  for(let n=1;n<=count;n++){
+    const s=document.createElement('span');
+    s.className='day'+(n===today?' today':'');
+    s.textContent=n;
+    box.appendChild(s);
+  }
+}
+renderCalendar();
+
+/* =========================================================
+   DOC STRUCTURE
+   ========================================================= */
+const SPACES = {
+  start:{
+    title:'Getting Started',
+    desc:'从注册、创建 Key，到完成第一次模型请求。',
+    chapters:[
+      {id:'begin',title:'新手入门',icon:'spark',pages:[
+        ['intro','Introduction'],['account','创建账户'],['key','创建 API Key'],['first','第一次请求']
+      ]},
+      {id:'concepts',title:'核心概念',icon:'node',pages:[
+        ['base','Base URL'],['model-names','模型命名'],['usage','用量与计费']
+      ]}
+    ]
+  },
+  api:{
+    title:'API Reference',
+    desc:'鉴权、Responses API、兼容接口与高级能力说明。',
+    chapters:[
+      {id:'foundation',title:'基础与鉴权',icon:'key',pages:[
+        ['intro','Introduction'],['auth','Authentication']
+      ]},
+      {id:'responses',title:'Responses API',icon:'code',pages:[
+        ['resp-overview','Overview'],['text','Text'],['vision','Vision'],['tools','Tools'],['streaming','Streaming']
+      ]},
+      {id:'chat',title:'Chat API',icon:'chat',pages:[
+        ['chat-overview','Overview'],['completions','Chat Completions'],['messages','Messages']
+      ]},
+      {id:'advanced',title:'高级能力',icon:'bolt',pages:[
+        ['errors','Errors'],['limits','Rate Limits'],['compat','Compatibility']
+      ]}
+    ]
+  },
+  models:{
+    title:'Models',
+    desc:'模型能力、价格层级与调用兼容性说明。',
+    chapters:[
+      {id:'catalog',title:'模型目录',icon:'grid',pages:[
+        ['model-overview','Overview'],['openai','OpenAI'],['anthropic','Anthropic'],['google','Google']
+      ]},
+      {id:'ability',title:'能力说明',icon:'star',pages:[
+        ['reasoning','Reasoning'],['vision-cap','Vision'],['tool-cap','Tool Calling']
+      ]}
+    ]
+  },
+  apps:{
+    title:'Applications',
+    desc:'把 Nexus 接入 Cursor、Claude Code 与常见 SDK。',
+    chapters:[
+      {id:'client',title:'客户端接入',icon:'screen',pages:[
+        ['cursor','Cursor'],['claude-code','Claude Code'],['cherry','Cherry Studio']
+      ]},
+      {id:'sdk',title:'SDK',icon:'terminal',pages:[
+        ['python','Python'],['node','Node.js'],['curl','cURL']
+      ]}
+    ]
+  },
+  vip:{
+    title:'充值与 VIP',
+    desc:'充值、等级、折扣与活动玩法说明。',
+    chapters:[
+      {id:'vip-level',title:'VIP 分级体系',icon:'gem',pages:[
+        ['vip-overview','总览'],['vip-levels','等级规则'],['vip-benefit','权益说明']
+      ]},
+      {id:'topup',title:'充值与福利',icon:'wallet',pages:[
+        ['topup-process','充值流程'],['daily-sign','每日签到'],['discount-example','折扣实例 · 每月能省多少'],['faq','常见问题'],['badge','成就勋章']
+      ]}
+    ]
+  }
+};
+
+const DOCS = {
+  auth:{
+    title:'Authentication',
+    lead:'Use an API key to authenticate every request sent to Nexus.',
+    text:'Nexus 使用标准 Bearer Token 进行鉴权。建议将 API Key 保存在环境变量或安全配置系统中。',
+    code:`curl https://www.chream.me/v1/responses \\
+  -H "Authorization: Bearer $NEXUS_API_KEY" \\
+  -H "Content-Type: application/json"`,
+    next:[['Streaming','streaming'],['Errors','errors']]
+  },
+  streaming:{
+    title:'Streaming',
+    lead:'Receive model output incrementally while the generation is running.',
+    text:'流式响应适用于聊天、长文本生成与实时前端界面。',
+    code:`curl https://www.chream.me/v1/responses \\
+  -H "Authorization: Bearer $NEXUS_API_KEY" \\
+  -d '{"model":"gpt-5.6","stream":true}'`,
+    next:[['Tools','tools'],['Chat Completions','completions']]
+  },
+  'claude-code':{
+    title:'Claude Code',
+    lead:'Connect Claude Code to Nexus with a compatible endpoint.',
+    text:'这里用于放置 Claude Code 的 Base URL、认证方式、环境变量和验证方法。',
+    code:`export ANTHROPIC_BASE_URL="https://www.chream.me"
+export ANTHROPIC_AUTH_TOKEN="$NEXUS_API_KEY"`,
+    next:[['Cursor','cursor'],['Node.js','node']]
+  },
+  'topup-process':{
+    title:'充值流程',
+    lead:'How users top up balance and unlock VIP benefits.',
+    text:'这里说明充值渠道、到账流程、注意事项与常见失败情况。',
+    code:`1. 选择充值金额
+2. 完成支付
+3. 等待到账
+4. 自动刷新余额`,
+    next:[['每日签到','daily-sign'],['折扣实例','discount-example']]
+  }
+};
+
+function iconSvg(name){
+  const map={
+    spark:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3Z"/></svg>`,
+    node:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 12h8"/></svg>`,
+    key:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="4"/><path d="M12 15h8M18 12v6"/></svg>`,
+    code:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/></svg>`,
+    chat:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4V6Z"/></svg>`,
+    bolt:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>`,
+    grid:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>`,
+    star:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.4 4.2L19 8l-3.2 3.2.7 4.8L12 13.8 7.5 16l.8-4.8L5 8l4.6-.8L12 3Z"/></svg>`,
+    screen:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 18V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12"/><path d="M2 18h20v2H2z"/></svg>`,
+    terminal:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 8 4 4-4 4M13 16h5"/></svg>`,
+    gem:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9 8 4h8l4 5-8 11L4 9Z"/></svg>`,
+    wallet:`<svg class="chapter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>`
+  };
+  return map[name]||map.spark;
+}
+
+let activeSpace='start';
+let activeChapter='begin';
+let activePage='intro';
+let navOriginalParent=navCard.parentElement;
+let navPromoted=false;
+
+function setNav(space){
+  activeSpace=space;
+  navButtons.forEach(btn=>btn.classList.toggle('active',btn.dataset.space===space));
+  const idx=navButtons.find(btn=>btn.dataset.space===space)?.dataset.index||'0';
+  navHighlight.dataset.index=idx;
+
+  if(!app.classList.contains('reader')){
+    navHighlight.style.transform='';
+    navHighlight.style.top=`${Number(idx)*56}px`;
+  }else{
+    navHighlight.style.top='3px';
+    navHighlight.style.transform=`translateX(${Number(idx)*113}px)`;
+  }
+}
+
+function mountEnergyFlow(subList,chapterEl){
+  const activeItem=subList.querySelector('.sub-item.active');
+  if(!activeItem||!chapterEl)return;
+
+  const activeCenterY=activeItem.offsetTop+activeItem.offsetHeight/2;
+  const sourceX=14,sourceY=8,verticalX=14,targetX=36,targetY=16+activeCenterY;
+  const radius=9;
+  const turnStart=Math.max(sourceY+11,targetY-radius);
+  const d=`M ${sourceX} ${sourceY} C ${sourceX} ${sourceY+7}, ${verticalX} ${sourceY+10}, ${verticalX} ${sourceY+14} V ${turnStart} Q ${verticalX} ${targetY} ${verticalX+radius} ${targetY} H ${targetX}`;
+  const h=Math.max(subList.scrollHeight+22,targetY+18);
+  const id=`beam-${Math.random().toString(36).slice(2)}`;
+
+  subList.insertAdjacentHTML('afterbegin',`
+    <svg class="flow-svg" viewBox="0 0 52 ${h}" width="52" height="${h}" aria-hidden="true">
+      <defs>
+        <linearGradient id="${id}-track" gradientUnits="userSpaceOnUse" x1="${sourceX}" y1="${sourceY}" x2="${targetX}" y2="${targetY}">
+          <stop offset="0%" stop-color="#39c8b5" stop-opacity=".10"/>
+          <stop offset="55%" stop-color="#57d9c7" stop-opacity=".24"/>
+          <stop offset="100%" stop-color="#9df0e3" stop-opacity=".44"/>
+        </linearGradient>
+        <linearGradient id="${id}-stream" gradientUnits="userSpaceOnUse" x1="${sourceX}" y1="${sourceY}" x2="${targetX}" y2="${targetY}">
+          <stop offset="0%" stop-color="#57ddc9" stop-opacity=".34"/>
+          <stop offset="56%" stop-color="#7aecd9" stop-opacity=".90"/>
+          <stop offset="84%" stop-color="#d7fff8" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#fbfffe" stop-opacity="1"/>
+        </linearGradient>
+        <filter id="${id}-glow" x="-400%" y="-200%" width="900%" height="500%">
+          <feGaussianBlur stdDeviation="1.4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <path id="${id}" d="${d}" pathLength="100"/>
+      </defs>
+      <use href="#${id}" class="beam-track" style="stroke:url(#${id}-track)"/>
+      <use href="#${id}" class="beam-stream" pathLength="100" style="stroke:url(#${id}-stream);filter:url(#${id}-glow)"/>
+      <use href="#${id}" class="beam-stream secondary" pathLength="100" style="stroke:url(#${id}-stream);filter:url(#${id}-glow)"/>
+      <use href="#${id}" class="beam-spark" pathLength="100" style="filter:url(#${id}-glow)"/>
+      <circle class="beam-source" cx="${sourceX}" cy="${sourceY}" r="1.8" style="filter:url(#${id}-glow)"/>
+      <circle class="beam-target" cx="${targetX}" cy="${targetY}" r="2.3" style="filter:url(#${id}-glow)"/>
+      <circle class="beam-head" r="1.5" style="filter:url(#${id}-glow)">
+        <animateMotion dur="1.4s" begin="0s" repeatCount="indefinite"><mpath href="#${id}"/></animateMotion>
+      </circle>
+      <circle class="beam-head secondary" r="1.15" style="filter:url(#${id}-glow)">
+        <animateMotion dur="1.4s" begin="-.47s" repeatCount="indefinite"><mpath href="#${id}"/></animateMotion>
+      </circle>
+      <circle class="beam-head secondary" r="1.05" style="filter:url(#${id}-glow)">
+        <animateMotion dur="1.4s" begin="-.94s" repeatCount="indefinite"><mpath href="#${id}"/></animateMotion>
+      </circle>
+    </svg>
+  `);
+}
+
+function renderSpace(spaceKey,pageKey){
+  const space=SPACES[spaceKey];
+  document.getElementById('spaceTitle').textContent=space.title;
+  document.getElementById('spaceDesc').textContent=space.desc;
+
+  let found=space.chapters[0];
+  if(pageKey){
+    for(const ch of space.chapters){
+      if(ch.pages.some(p=>p[0]===pageKey)){found=ch;break}
+    }
+  }
+
+  activeChapter=found.id;
+  activePage=pageKey||found.pages[0][0];
+
+  const wrap=document.getElementById('chapterList');
+  wrap.innerHTML='';
+
+  space.chapters.forEach(ch=>{
+    const chapter=document.createElement('section');
+    chapter.className='chapter'+(ch.id===activeChapter?' active':'');
+    chapter.dataset.chapter=ch.id;
+
+    const head=document.createElement('button');
+    head.className='chapter-header';
+    head.innerHTML=`${iconSvg(ch.icon)}<span class="chapter-title">${ch.title}</span><span class="chapter-arrow">⌃</span>`;
+    head.onclick=()=>{
+      activeChapter=ch.id;
+      [...wrap.children].forEach(item=>item.classList.toggle('active',item.dataset.chapter===ch.id));
+    };
+
+    const body=document.createElement('div');
+    body.className='chapter-body';
+
+    const sub=document.createElement('div');
+    sub.className='sub-list';
+
+    ch.pages.forEach(([id,title])=>{
+      const item=document.createElement('button');
+      item.className='sub-item'+(id===activePage?' active':'');
+      item.textContent=title;
+      item.onclick=e=>{
+        e.stopPropagation();
+        activeChapter=ch.id;
+        activePage=id;
+        renderSpace(spaceKey,id);
+        renderDoc(spaceKey,id,title);
+      };
+      sub.appendChild(item);
+    });
+
+    body.appendChild(sub);
+    chapter.appendChild(head);
+    chapter.appendChild(body);
+    wrap.appendChild(chapter);
+
+    if(ch.id===activeChapter){
+      requestAnimationFrame(()=>mountEnergyFlow(sub,chapter));
+    }
+  });
+
+  const currentTitle=found.pages.find(p=>p[0]===activePage)?.[1]||'';
+  renderDoc(spaceKey,activePage,currentTitle);
+}
+
+function renderDoc(spaceKey,pageKey,fallbackTitle){
+  const data=DOCS[pageKey]||{
+    title:fallbackTitle||'Document',
+    lead:`This is the "${fallbackTitle}" page inside ${SPACES[spaceKey].title}.`,
+    text:`这里是 "${fallbackTitle}" 的示例正文。后续可以直接替换为 Markdown / MDX 内容。`,
+    code:`// ${fallbackTitle}\n// Replace with real documentation content.`,
+    next:[]
+  };
+
+  document.getElementById('breadcrumb').textContent=`Nexus Docs / ${SPACES[spaceKey].title} / ${data.title}`;
+  document.getElementById('docTitle').textContent=data.title;
+  document.getElementById('docLead').textContent=data.lead;
+  document.getElementById('docText').textContent=data.text;
+  document.getElementById('codeBlock').textContent=data.code;
+
+  const nextRow=document.getElementById('nextRow');
+  nextRow.innerHTML='';
+
+  (data.next||[]).forEach(([label,id])=>{
+    const item=document.createElement('button');
+    item.className='next-card';
+    item.innerHTML=`<strong>${label}</strong><span>Open next document →</span>`;
+    item.onclick=()=>renderSpace(spaceKey,id);
+    nextRow.appendChild(item);
+  });
+
+  if((data.next||[]).length===0){
+    nextRow.innerHTML=`
+      <div class="next-card"><strong>More content</strong><span>Continue this documentation space.</span></div>
+      <div class="next-card"><strong>MDX Ready</strong><span>Replace with Markdown / MDX.</span></div>
+    `;
+  }
+}
+
+function promoteNavForReader(){
+  if(navPromoted)return;
+
+  const rect=navCard.getBoundingClientRect();
+
+  navCard.style.left=`${rect.left}px`;
+  navCard.style.top=`${rect.top}px`;
+  navCard.style.width=`${rect.width}px`;
+  navCard.style.height=`${rect.height}px`;
+
+  app.appendChild(navCard);
+  navCard.classList.add('promoted');
+  navPromoted=true;
+}
+
+function restoreNavToCanvas(){
+  if(!navPromoted)return;
+
+  navOriginalParent.appendChild(navCard);
+  navCard.classList.remove('promoted');
+  navCard.style.left='';
+  navCard.style.top='';
+  navCard.style.width='';
+  navCard.style.height='';
+  navPromoted=false;
+}
+
+function enterReader(spaceKey,pageKey){
+  canvasEnabled=false;
+  promoteNavForReader();
+
+  requestAnimationFrame(()=>{
+    app.classList.remove('portal');
+    app.classList.add('reader');
+    setNav(spaceKey);
+    renderSpace(spaceKey,pageKey);
+  });
+}
+
+function backHome(){
+  app.classList.remove('reader');
+  app.classList.add('portal');
+
+  setTimeout(()=>{
+    restoreNavToCanvas();
+    canvasEnabled=true;
+    stopCanvasMotion();
+    setNav(activeSpace);
+  },760);
+}
+
+navButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const space=btn.dataset.space;
+    setNav(space);
+
+    if(app.classList.contains('reader')){
+      if(space==='api')renderSpace('api','auth');
+      else if(space==='apps')renderSpace('apps','claude-code');
+      else if(space==='vip')renderSpace('vip','topup-process');
+      else renderSpace(space);
+      return;
+    }
+
+    if(space==='api')enterReader('api','auth');
+    else if(space==='apps')enterReader('apps','claude-code');
+    else if(space==='vip')enterReader('vip','topup-process');
+    else enterReader(space);
+  });
+});
+
+document.getElementById('guideCard').addEventListener('click',()=>enterReader('apps','claude-code'));
+brandMark.addEventListener('click',()=>{
+  if(app.classList.contains('reader'))backHome();
+});
+
+setNav('start');
+renderSpace('api','auth');
+</script>
+</body>
+</html>

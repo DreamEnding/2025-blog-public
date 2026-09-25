@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import initialList from './list.json'
@@ -11,6 +11,7 @@ import { useAuthStore } from '@/hooks/use-auth'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 import type { ImageItem } from '../projects/components/image-upload-dialog'
 import { useRouter } from 'next/navigation'
+import { loadLegacyJson } from '@/lib/legacy-client'
 
 export interface Picture {
 	id: string
@@ -27,12 +28,18 @@ export default function Page() {
 	const [isSaving, setIsSaving] = useState(false)
 	const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
 	const [imageItems, setImageItems] = useState<Map<string, ImageItem>>(new Map())
-	const keyInputRef = useRef<HTMLInputElement>(null)
 	const router = useRouter()
 
-	const { isAuth, setPrivateKey } = useAuthStore()
+	const { isAuth } = useAuthStore()
 	const { siteContent } = useConfigStore()
 	const hideEditButton = siteContent.hideEditButton ?? false
+
+	useEffect(() => {
+		loadLegacyJson<Picture[]>('src/app/pictures/list.json').then(value => {
+			setPictures(value)
+			setOriginalPictures(value)
+		}).catch(console.error)
+	}, [])
 
 	const handleUploadSubmit = ({ images, description }: { images: ImageItem[]; description: string }) => {
 		const now = new Date().toISOString()
@@ -155,20 +162,9 @@ export default function Page() {
 		})
 	}
 
-	const handleChoosePrivateKey = async (file: File) => {
-		try {
-			const text = await file.text()
-			setPrivateKey(text)
-			await handleSave()
-		} catch (error) {
-			console.error('Failed to read private key:', error)
-			toast.error('读取密钥文件失败')
-		}
-	}
-
 	const handleSaveClick = () => {
 		if (!isAuth) {
-			keyInputRef.current?.click()
+			window.location.assign(`/admin?next=${encodeURIComponent(window.location.pathname)}`)
 		} else {
 			handleSave()
 		}
@@ -201,7 +197,7 @@ export default function Page() {
 		setIsEditMode(false)
 	}
 
-	const buttonText = isAuth ? '保存' : '导入密钥'
+	const buttonText = isAuth ? '保存' : '登录后台'
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -219,18 +215,6 @@ export default function Page() {
 
 	return (
 		<>
-			<input
-				ref={keyInputRef}
-				type='file'
-				accept='.pem'
-				className='hidden'
-				onChange={async e => {
-					const f = e.target.files?.[0]
-					if (f) await handleChoosePrivateKey(f)
-					if (e.currentTarget) e.currentTarget.value = ''
-				}}
-			/>
-
 			<RandomLayout pictures={pictures} isEditMode={isEditMode} onDeleteSingle={handleDeleteSingleImage} onDeleteGroup={handleDeleteGroup} />
 
 			{pictures.length === 0 && (

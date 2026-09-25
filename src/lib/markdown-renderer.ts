@@ -8,6 +8,23 @@ export interface MarkdownRenderResult {
 	toc: TocItem[]
 }
 
+function escapeHtml(value: string) {
+	return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
+function plainText(tokens: Tokens.Heading['tokens']): string {
+	return tokens
+		.map(token => {
+			if ('tokens' in token && token.tokens) return plainText(token.tokens)
+			return 'text' in token ? token.text : ''
+		})
+		.join('')
+}
+
+function safeUrl(value: string) {
+	return /^(https?:\/\/|\/[^/]|#)/i.test(value)
+}
+
 export function slugify(text: string): string {
 	return text
 		.toLowerCase()
@@ -61,14 +78,20 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 	// (If we lex before registering extensions, math tokens won't ever be produced on a cold refresh.)
 	const codeBlockMap = new Map<string, { html: string; original: string }>()
 	const [shiki, katex] = await Promise.all([loadShiki(), loadKatex()])
+	const headingIds = new Map<object, string>()
+	const headingCounts = new Map<string, number>()
 
 	// Render HTML with heading ids
 	const renderer = new marked.Renderer()
 
 	renderer.heading = (token: Tokens.Heading) => {
-		const id = slugify(token.text || '')
-		return `<h${token.depth} id="${id}">${token.text}</h${token.depth}>`
+		const id = headingIds.get(token) || slugify(plainText(token.tokens)) || 'section'
+		return `<h${token.depth} id="${id}">${marked.parseInline(token.text)}</h${token.depth}>`
 	}
+	renderer.html = token => escapeHtml(token.text)
+	renderer.link = token =>
+		safeUrl(token.href) ? `<a href="${escapeHtml(token.href)}" rel="noreferrer">${marked.parseInline(token.text)}</a>` : escapeHtml(plainText(token.tokens))
+	renderer.image = token => (safeUrl(token.href) ? `<img src="${escapeHtml(token.href)}" alt="${escapeHtml(token.text)}" />` : escapeHtml(token.text))
 
 	renderer.code = (token: Tokens.Code) => {
 		// Check if this code block was pre-processed
@@ -82,10 +105,10 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 				return `<pre data-code="${escapedCode}">${codeData.html}</pre>`
 			}
 			// Fallback for failed highlighting
-			return `<pre data-code="${escapedCode}"><code>${codeData.original}</code></pre>`
+			return `<pre data-code="${escapedCode}"><code>${escapeHtml(codeData.original)}</code></pre>`
 		}
 		// Fallback to default (inline code, not code block)
-		return `<code>${token.text}</code>`
+		return `<code>${escapeHtml(token.text)}</code>`
 	}
 
 	renderer.listitem = (token: Tokens.ListItem) => {
@@ -107,7 +130,7 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 	const renderMath = (content: string, displayMode: boolean) => {
 		if (!katex) {
 			// Keep original delimiters if katex is not available
-			return displayMode ? `$$${content}$$` : `$${content}$`
+			return escapeHtml(displayMode ? `$$${content}$$` : `$${content}$`)
 		}
 
 		try {
@@ -118,7 +141,7 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 				strict: 'ignore'
 			})
 		} catch {
-			return displayMode ? `$$${content}$$` : `$${content}$`
+			return escapeHtml(displayMode ? `$$${content}$$` : `$${content}$`)
 		}
 	}
 
@@ -186,11 +209,14 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 	const toc: TocItem[] = []
 	function extractHeadings(tokenList: typeof tokens) {
 		for (const token of tokenList) {
-			if (token.type === 'heading' && token.depth <= 3) {
-				// Use the parsed text (markdown syntax like links/code already stripped)
-				const text = token.text
-				const id = slugify(text)
-				toc.push({ id, text, level: token.depth })
+			if (token.type === 'heading') {
+				const text = plainText(token.tokens || [])
+				const base = slugify(text) || 'section'
+				const count = (headingCounts.get(base) || 0) + 1
+				headingCounts.set(base, count)
+				const id = count === 1 ? base : `${base}-${count}`
+				headingIds.set(token, id)
+				if (token.depth <= 3) toc.push({ id, text, level: token.depth })
 			}
 			// Recursively check nested tokens (e.g., in blockquotes, lists)
 			if ('tokens' in token && token.tokens) {

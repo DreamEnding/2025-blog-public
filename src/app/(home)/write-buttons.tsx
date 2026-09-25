@@ -5,14 +5,12 @@ import { useEffect, useState } from 'react'
 import { useConfigStore } from './stores/config-store'
 import { useCenterStore } from '@/hooks/use-center'
 import { useRouter } from 'next/navigation'
-import { useSize } from '@/hooks/use-size'
 import DotsSVG from '@/svgs/dots.svg'
 import { HomeDraggableLayer } from './home-draggable-layer'
 
 export default function WriteButton() {
 	const center = useCenterStore()
 	const { cardStyles, setConfigDialogOpen, siteContent } = useConfigStore()
-	const { maxSM } = useSize()
 	const router = useRouter()
 	const styles = cardStyles.writeButtons
 	const hiCardStyles = cardStyles.hiCard
@@ -23,8 +21,6 @@ export default function WriteButton() {
 	useEffect(() => {
 		setTimeout(() => setShow(true), styles.order * ANIMATION_DELAY * 1000)
 	}, [styles.order])
-
-	if (maxSM) return null
 
 	if (!show) return null
 

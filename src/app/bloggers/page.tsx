@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import GridView, { type Blogger } from './grid-view'
@@ -10,6 +10,7 @@ import { useAuthStore } from '@/hooks/use-auth'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 import initialList from './list.json'
 import type { AvatarItem } from './components/avatar-upload-dialog'
+import { loadLegacyJson } from '@/lib/legacy-client'
 
 export default function Page() {
 	const [bloggers, setBloggers] = useState<Blogger[]>(initialList as Blogger[])
@@ -19,11 +20,16 @@ export default function Page() {
 	const [editingBlogger, setEditingBlogger] = useState<Blogger | null>(null)
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 	const [avatarItems, setAvatarItems] = useState<Map<string, AvatarItem>>(new Map())
-	const keyInputRef = useRef<HTMLInputElement>(null)
-
-	const { isAuth, setPrivateKey } = useAuthStore()
+	const { isAuth } = useAuthStore()
 	const { siteContent } = useConfigStore()
 	const hideEditButton = siteContent.hideEditButton ?? false
+
+	useEffect(() => {
+		loadLegacyJson<Blogger[]>('src/app/bloggers/list.json').then(value => {
+			setBloggers(value)
+			setOriginalBloggers(value)
+		}).catch(console.error)
+	}, [])
 
 	const handleUpdate = (updatedBlogger: Blogger, oldBlogger: Blogger, avatarItem?: AvatarItem) => {
 		setBloggers(prev => prev.map(b => (b.url === oldBlogger.url ? updatedBlogger : b)))
@@ -62,21 +68,9 @@ export default function Page() {
 		}
 	}
 
-	const handleChoosePrivateKey = async (file: File) => {
-		try {
-			const text = await file.text()
-			setPrivateKey(text)
-			// 选择文件后自动保存
-			await handleSave()
-		} catch (error) {
-			console.error('Failed to read private key:', error)
-			toast.error('读取密钥文件失败')
-		}
-	}
-
 	const handleSaveClick = () => {
 		if (!isAuth) {
-			keyInputRef.current?.click()
+			window.location.assign(`/admin?next=${encodeURIComponent(window.location.pathname)}`)
 		} else {
 			handleSave()
 		}
@@ -110,7 +104,7 @@ export default function Page() {
 		setIsEditMode(false)
 	}
 
-	const buttonText = isAuth ? '保存' : '导入密钥'
+	const buttonText = isAuth ? '保存' : '登录后台'
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -128,18 +122,6 @@ export default function Page() {
 
 	return (
 		<>
-			<input
-				ref={keyInputRef}
-				type='file'
-				accept='.pem'
-				className='hidden'
-				onChange={async e => {
-					const f = e.target.files?.[0]
-					if (f) await handleChoosePrivateKey(f)
-					if (e.currentTarget) e.currentTarget.value = ''
-				}}
-			/>
-
 			<GridView bloggers={bloggers} isEditMode={isEditMode} onUpdate={handleUpdate} onDelete={handleDelete} />
 
 			<motion.div initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} className='absolute top-4 right-6 flex gap-3 max-sm:hidden'>

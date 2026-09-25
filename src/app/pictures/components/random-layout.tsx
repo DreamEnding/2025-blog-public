@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { useCenterInit, useCenterStore } from '@/hooks/use-center'
 import { Picture } from '../page'
-import siteContent from '@/config/site-content.json'
+import { useConfigStore } from '@/app/(home)/stores/config-store'
 import { cn } from '@/lib/utils'
 import { useSize } from '@/hooks/use-size'
 
@@ -133,6 +133,7 @@ const FloatingImage = ({
 	onDeleteGroup
 }: FloatingImageProps) => {
 	const { centerX, centerY } = useCenterStore()
+	const { siteContent } = useConfigStore()
 	const { maxSM, init } = useSize()
 	const bodyRef = useRef(document.body)
 	const mouseDownTimeRef = useRef<number | null>(null)

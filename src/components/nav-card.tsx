@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils'
 import { useSize } from '@/hooks/use-size'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 import { HomeDraggableLayer } from '@/app/(home)/home-draggable-layer'
+import { BookOpenText } from 'lucide-react'
 
 const list = [
 	{
@@ -54,6 +55,12 @@ const list = [
 		iconActive: WebsiteFilledSVG,
 		label: '优秀博客',
 		href: '/bloggers'
+	},
+	{
+		icon: BookOpenText,
+		iconActive: BookOpenText,
+		label: 'API 文档',
+		href: '/docs'
 	}
 ]
 
@@ -83,7 +90,7 @@ export default function NavCard() {
 		else if (pathname == '/write') return 'mini'
 		else return 'icons'
 	}, [pathname])
-	if (maxSM) form = 'icons'
+	if (maxSM && pathname !== '/') form = 'icons'
 
 	const itemHeight = form === 'full' ? 52 : 28
 
@@ -95,7 +102,7 @@ export default function NavCard() {
 		}
 
 		return {
-			x: 24,
+			x: 176,
 			y: 16
 		}
 	}, [form, center, styles, hiCardStyles])
@@ -115,7 +122,7 @@ export default function NavCard() {
 		}
 	}, [hoveredIndex, activeIndex, form])
 
-	if (maxSM) position = { x: center.x - size.width / 2, y: 16 }
+	if (maxSM && pathname !== '/') position = { x: center.x - size.width / 2, y: 80 }
 
 	if (show)
 		return (

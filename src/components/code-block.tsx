@@ -27,12 +27,11 @@ export function CodeBlock({ children, code }: CodeBlockProps) {
 				type='button'
 				onClick={handleCopy}
 				className='code-block-copy-btn'
-				aria-label='Copy code'
-			>
+				aria-label={copied ? '代码已复制' : '复制代码'}
+				title={copied ? '已复制' : '复制代码'}>
 				{copied ? <Check size={16} /> : <Copy size={16} />}
 			</button>
 			{children}
 		</div>
 	)
 }
-
