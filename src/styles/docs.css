@@ -54,6 +54,14 @@
 	margin: 0 auto;
 	padding: 52px 24px;
 }
+.site-public-page > .docs-container {
+	padding-top: 80px;
+}
+@media (max-width: 639px) {
+	.site-public-page > .docs-container {
+		padding-top: 144px;
+	}
+}
 .docs-home {
 	padding-top: 92px;
 }

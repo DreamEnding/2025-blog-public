@@ -1,7 +1,7 @@
-import { ANIMATION_DELAY, CARD_SPACING } from '@/consts'
+import { CARD_SPACING } from '@/consts'
 import PenSVG from '@/svgs/pen.svg'
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useConfigStore } from './stores/config-store'
 import { useCenterStore } from '@/hooks/use-center'
 import { useRouter } from 'next/navigation'
@@ -16,13 +16,11 @@ export default function WriteButton() {
 	const hiCardStyles = cardStyles.hiCard
 	const clockCardStyles = cardStyles.clockCard
 
-	const [show, setShow] = useState(false)
-
 	useEffect(() => {
-		setTimeout(() => setShow(true), styles.order * ANIMATION_DELAY * 1000)
-	}, [styles.order])
+		router.prefetch('/write')
+	}, [router])
 
-	if (!show) return null
+	if (center.x === 0 && center.y === 0) return null
 
 	const x = styles.offsetX !== null ? center.x + styles.offsetX : center.x + CARD_SPACING + hiCardStyles.width / 2
 	const y = styles.offsetY !== null ? center.y + styles.offsetY : center.y - clockCardStyles.offset - styles.height - CARD_SPACING / 2 - clockCardStyles.height
@@ -32,7 +30,7 @@ export default function WriteButton() {
 			<motion.div initial={{ left: x, top: y }} animate={{ left: x, top: y }} className='absolute flex items-center gap-4'>
 				<motion.button
 					onClick={() => router.push('/write')}
-					initial={{ opacity: 0, scale: 0.6 }}
+					initial={false}
 					animate={{ opacity: 1, scale: 1 }}
 					whileHover={{ scale: 1.05 }}
 					whileTap={{ scale: 0.95 }}
@@ -53,7 +51,7 @@ export default function WriteButton() {
 					<span>写文章</span>
 				</motion.button>
 				<motion.button
-					initial={{ opacity: 0, scale: 0.6 }}
+					initial={false}
 					animate={{ opacity: 1, scale: 1 }}
 					whileHover={{ scale: 1.05 }}
 					whileTap={{ scale: 0.95 }}

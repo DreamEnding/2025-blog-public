@@ -1,6 +1,6 @@
 import { useCenterStore } from '@/hooks/use-center'
 import GithubSVG from '@/svgs/github.svg'
-import { ANIMATION_DELAY, CARD_SPACING } from '@/consts'
+import { CARD_SPACING } from '@/consts'
 import { useConfigStore } from './stores/config-store'
 import JuejinSVG from '@/svgs/juejin.svg'
 import EmailSVG from '@/svgs/email.svg'
@@ -19,7 +19,6 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import type React from 'react'
 import { toast } from 'sonner'
-import { useSize } from '@/hooks/use-size'
 import { HomeDraggableLayer } from './home-draggable-layer'
 import { createPortal } from 'react-dom'
 
@@ -51,36 +50,17 @@ interface SocialButtonConfig {
 export default function SocialButtons() {
 	const center = useCenterStore()
 	const { cardStyles, siteContent } = useConfigStore()
-	const { maxSM, init } = useSize()
 	const styles = cardStyles.socialButtons
 	const hiCardStyles = cardStyles.hiCard
-	const order = maxSM && init ? 0 : styles.order
-	const delay = maxSM && init ? 0 : 100
 
 	const sortedButtons = useMemo(() => {
 		const buttons = (siteContent.socialButtons || []) as SocialButtonConfig[]
 		return [...buttons].sort((a, b) => a.order - b.order)
 	}, [siteContent.socialButtons])
 
-	const [showStates, setShowStates] = useState<Record<string, boolean>>({})
 	const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({})
 	const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({})
 	const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-
-	useEffect(() => {
-		const baseDelay = order * ANIMATION_DELAY * 1000
-
-		sortedButtons.forEach((button, index) => {
-			const showDelay = baseDelay + index * delay
-			setTimeout(() => {
-				setShowStates(prev => ({ ...prev, [button.id]: true }))
-			}, showDelay)
-		})
-
-		setTimeout(() => {
-			setShowStates(prev => ({ ...prev, container: true }))
-		}, baseDelay)
-	}, [order, delay, sortedButtons])
 
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
@@ -107,7 +87,7 @@ export default function SocialButtons() {
 	const x = styles.offsetX !== null ? center.x + styles.offsetX : center.x + hiCardStyles.width / 2 - styles.width
 	const y = styles.offsetY !== null ? center.y + styles.offsetY : center.y + hiCardStyles.height / 2 + CARD_SPACING
 
-	if (!showStates.container) return null
+	if (center.x === 0 && center.y === 0) return null
 
 	const iconMap: Record<SocialButtonType, React.ComponentType<{ className?: string }>> = {
 		github: GithubSVG,
@@ -128,10 +108,8 @@ export default function SocialButtons() {
 	}
 
 	const renderButton = (button: SocialButtonConfig) => {
-		if (!showStates[button.id]) return null
-
 		const commonProps = {
-			initial: { opacity: 0, scale: 0.6 } as const,
+			initial: false as const,
 			animate: { opacity: 1, scale: 1 } as const,
 			whileHover: { scale: 1.05 } as const,
 			whileTap: { scale: 0.95 } as const

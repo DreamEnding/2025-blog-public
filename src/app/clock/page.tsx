@@ -133,7 +133,7 @@ export default function ClockPage() {
 	const canStart = mode === 'timer' ? timerTime > 0 || timerInput.hours > 0 || timerInput.minutes > 0 || timerInput.seconds > 0 : true
 
 	return (
-		<div className='flex flex-col items-center px-6 pt-32 pb-12'>
+		<div className='flex flex-col items-center px-6 pt-32 pb-12 max-sm:pt-40'>
 			<motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className='w-full max-w-[600px] space-y-8'>
 				{/* Mode Selector */}
 				<div className='card relative flex gap-4 rounded-xl p-2'>

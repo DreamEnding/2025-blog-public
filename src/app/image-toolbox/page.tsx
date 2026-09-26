@@ -295,7 +295,7 @@ export default function Page() {
 	}, [])
 
 	return (
-		<div className='relative px-6 pt-32 pb-12 text-sm max-sm:pt-28'>
+		<div className='relative px-6 pt-32 pb-12 text-sm max-sm:pt-36'>
 			<div className='mx-auto flex max-w-3xl flex-col gap-6'>
 				<motion.div
 					initial={{ opacity: 0, scale: 0.9 }}

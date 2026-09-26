@@ -22,7 +22,7 @@ export default function ArtCard() {
 
 	return (
 		<HomeDraggableLayer cardKey='artCard' x={x} y={y} width={styles.width} height={styles.height}>
-			<Card className='p-2' order={styles.order} width={styles.width} height={styles.height} x={x} y={y}>
+			<Card className='p-2' width={styles.width} height={styles.height} x={x} y={y}>
 				{siteContent.enableChristmas && (
 					<>
 						<img

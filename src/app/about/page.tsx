@@ -86,7 +86,7 @@ export default function Page() {
 
 	return (
 		<>
-			<div className='flex flex-col items-center justify-center px-6 pt-32 pb-12 max-sm:px-0'>
+			<div className='flex flex-col items-center justify-center px-6 pt-32 pb-12 max-sm:px-0 max-sm:pt-40'>
 				<div className='w-full max-w-[800px]'>
 					{isEditMode ? (
 						isPreviewMode ? (

@@ -1,5 +1,5 @@
 import LikeButton from '@/components/like-button'
-import { ANIMATION_DELAY, CARD_SPACING } from '@/consts'
+import { CARD_SPACING } from '@/consts'
 import { motion } from 'motion/react'
 import { useCenterStore } from '@/hooks/use-center'
 import { useConfigStore } from './stores/config-store'
@@ -20,6 +20,7 @@ export default function LikePosition() {
 		styles.offsetY !== null
 			? center.y + styles.offsetY
 			: center.y + hiCardStyles.height / 2 + CARD_SPACING + socialButtonsStyles.height + CARD_SPACING + musicCardStyles.height + CARD_SPACING
+	if (center.width === 0) return null
 
 	return (
 		<HomeDraggableLayer cardKey='likePosition' x={x} y={y} width={styles.width} height={styles.height}>
@@ -35,7 +36,7 @@ export default function LikePosition() {
 					</>
 				)}
 
-				<LikeButton delay={cardStyles.shareCard.order * ANIMATION_DELAY * 1000} />
+				<LikeButton />
 			</motion.div>
 		</HomeDraggableLayer>
 	)

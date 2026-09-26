@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import { create } from 'zustand'
 
 export const HOME_WORLD = { width: 1760, height: 1050 }
+// Bounds of the default visible cards relative to the home canvas center.
+const HOME_CARD_BOUNDS = { width: 1062, height: 824, offsetX: 35, offsetY: 32 }
 
 type CenterState = {
 	x: number
@@ -24,8 +26,8 @@ const computeCenter = () => {
 	const height = window.innerHeight
 	const homeCanvas = window.location.pathname === '/'
 	return {
-		x: homeCanvas ? HOME_WORLD.width / 2 : Math.floor(width / 2),
-		y: homeCanvas ? HOME_WORLD.height / 2 : Math.floor(height / 2) - 24,
+		x: homeCanvas ? HOME_WORLD.width / 2 - (width >= HOME_CARD_BOUNDS.width ? HOME_CARD_BOUNDS.offsetX : 0) : Math.floor(width / 2),
+		y: homeCanvas ? HOME_WORLD.height / 2 - (height >= HOME_CARD_BOUNDS.height ? HOME_CARD_BOUNDS.offsetY : 0) : Math.floor(height / 2) - 24,
 		centerX: Math.floor(width / 2),
 		centerY: Math.floor(height / 2),
 		width,

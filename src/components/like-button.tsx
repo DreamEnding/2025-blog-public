@@ -18,15 +18,15 @@ const ENDPOINT = '/api/like'
 export default function LikeButton({ slug = 'yysuni', delay, className }: LikeButtonProps) {
 	slug = BLOG_SLUG_KEY + slug
 	const [liked, setLiked] = useState(false)
-	const [show, setShow] = useState(false)
+	const [show, setShow] = useState(!delay)
 	const [justLiked, setJustLiked] = useState(false)
 	const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number }>>([])
 
 	useEffect(() => {
-		setTimeout(() => {
-			setShow(true)
-		}, delay || 1000)
-	}, [])
+		if (!delay) return
+		const timer = setTimeout(() => setShow(true), delay)
+		return () => clearTimeout(timer)
+	}, [delay])
 
 	useEffect(() => {
 		if (justLiked) {
@@ -80,7 +80,7 @@ export default function LikeButton({ slug = 'yysuni', delay, className }: LikeBu
 	if (show)
 		return (
 			<motion.button
-				initial={{ opacity: 0, scale: 0.6 }}
+				initial={false}
 				animate={{ opacity: 1, scale: 1 }}
 				whileHover={{ scale: 1.05 }}
 				whileTap={{ scale: 0.95 }}

@@ -30,7 +30,7 @@ export default function HiCard() {
 
 	return (
 		<HomeDraggableLayer cardKey='hiCard' x={x} y={y} width={styles.width} height={styles.height}>
-			<Card order={styles.order} width={styles.width} height={styles.height} x={x} y={y} className='text-center'>
+			<Card width={styles.width} height={styles.height} x={x} y={y} className='text-center'>
 				{siteContent.enableChristmas && (
 					<>
 						<img

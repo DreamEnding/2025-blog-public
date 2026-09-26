@@ -1,5 +1,5 @@
 {
 	"title": "关于本站",
-	"description": "一个基于 Github 的现代化博客系统",
-	"content": "📦网站基于 Github 仓库完全存储，所有内容版本可控\n\n🚀无后端，无 serverless function，纯静态站点\n\n✏️文章通过可视化 UI 直接编辑并提交到 Github 仓库\n\n🔑所有用户都可以编辑，提交需要 Owner 的 Private Key\n\n## 技术栈\n\n- Next.js\n- React\n- TypeScript\n- Tailwind CSS\n- Motion\n- Github API"
+	"description": "一个基于 Next.js 与 SQLite 的自托管博客和文档站",
+	"content": "这里整理 API 文档、使用教程、AI 技术分享和文章。\n\n## 如何运作\n\n- **阅读与发布**：访客阅读已发布内容；管理员登录后台后可编辑 Markdown、预览、保存草稿并发布。保存草稿不会改变公开页面。\n- **内容存储**：文档、栏目和站点设置保存在 SQLite，上传图片保存在持久化数据目录。发布后立即生效，无需提交 GitHub 或重新部署。\n- **部署方式**：页面和服务端 API 由同一个 Next.js 应用提供，可通过 Docker Compose 自托管，使用数据卷保留数据库和图片。\n\n## 技术栈\n\n- Next.js 16、React 19、TypeScript\n- Tailwind CSS 4、Motion\n- SQLite（better-sqlite3）\n- Markdown 渲染：Marked、Shiki、KaTeX"
 }

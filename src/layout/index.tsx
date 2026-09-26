@@ -104,7 +104,7 @@ export default function Layout({ children, docsSite }: PropsWithChildren<{ docsS
 			)}
 			<BlurredBubblesBackground colors={siteContent.backgroundColors} regenerateKey={regenerateKey} />
 
-			<main className='relative z-10 h-full'>
+			<main className='site-public-page relative z-10 h-full'>
 				{children}
 				{pathname !== '/' && (
 					<>

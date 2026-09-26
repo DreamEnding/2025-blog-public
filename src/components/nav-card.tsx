@@ -61,7 +61,7 @@ export default function NavCard() {
 	const center = useCenterStore()
 	const [show, setShow] = useState(false)
 	const { maxSM } = useSize()
-	const [hoveredIndex, setHoveredIndex] = useState<number>(0)
+	const [hovered, setHovered] = useState<{ pathname: string; index: number } | null>(null)
 	const { siteContent, cardStyles } = useConfigStore()
 	const styles = cardStyles.navCard
 	const hiCardStyles = cardStyles.hiCard
@@ -70,6 +70,7 @@ export default function NavCard() {
 		const index = list.findIndex(item => pathname === item.href)
 		return index >= 0 ? index : undefined
 	}, [pathname])
+	const selectedIndex = hovered?.pathname === pathname ? hovered.index : (activeIndex ?? 0)
 
 	useEffect(() => {
 		setShow(true)
@@ -83,6 +84,7 @@ export default function NavCard() {
 	if (maxSM && pathname !== '/') form = 'icons'
 
 	const itemHeight = form === 'full' ? 52 : 28
+	const iconGap = maxSM ? 12 : 24
 
 	let position = useMemo(() => {
 		if (form === 'full') {
@@ -99,31 +101,21 @@ export default function NavCard() {
 
 	const size = useMemo(() => {
 		if (form === 'mini') return { width: 64, height: 64 }
-		else if (form === 'icons') return { width: 340, height: 64 }
+		else if (form === 'icons') return { width: Math.min(340, Math.max(0, center.width - 32)), height: 64 }
 		else return { width: styles.width, height: styles.height }
-	}, [form, styles])
+	}, [form, styles, center.width])
 
-	useEffect(() => {
-		if (form === 'icons' && activeIndex !== undefined && hoveredIndex !== activeIndex) {
-			const timer = setTimeout(() => {
-				setHoveredIndex(activeIndex)
-			}, 1500)
-			return () => clearTimeout(timer)
-		}
-	}, [hoveredIndex, activeIndex, form])
-
-	if (maxSM && pathname !== '/') position = { x: center.x - size.width / 2, y: 80 }
+	if (maxSM && pathname !== '/') position = { x: center.centerX - size.width / 2, y: 80 }
 
 	if (show)
 		return (
 			<HomeDraggableLayer cardKey='navCard' x={position.x} y={position.y} width={styles.width} height={styles.height}>
 				<Card
-					order={styles.order}
 					width={size.width}
 					height={size.height}
 					x={position.x}
 					y={position.y}
-					className={clsx(form != 'full' && 'overflow-hidden', form === 'mini' && 'p-3', form === 'icons' && 'flex items-center gap-6 p-3')}>
+					className={clsx(form != 'full' && 'overflow-hidden', form === 'mini' && 'p-3', form === 'icons' && 'flex items-center gap-6 p-3 max-sm:gap-3')}>
 					{form === 'full' && siteContent.enableChristmas && (
 						<>
 							<img
@@ -145,7 +137,9 @@ export default function NavCard() {
 						<>
 							{form !== 'icons' && <div className='text-secondary mt-6 text-sm uppercase'>General</div>}
 
-							<div className={cn('relative mt-2 space-y-2', form === 'icons' && 'mt-0 flex items-center gap-6 space-y-0')}>
+							<div
+								className={cn('relative mt-2 space-y-2', form === 'icons' && 'mt-0 flex items-center gap-6 space-y-0 max-sm:gap-3')}
+								onMouseLeave={() => setHovered(null)}>
 								<motion.div
 									className='absolute max-w-[230px] rounded-full border'
 									layoutId='nav-hover'
@@ -153,12 +147,12 @@ export default function NavCard() {
 									animate={
 										form === 'icons'
 											? {
-													left: hoveredIndex * (itemHeight + 24) - extraSize,
+													left: selectedIndex * (itemHeight + iconGap) - extraSize,
 													top: -extraSize,
 													width: itemHeight + extraSize * 2,
 													height: itemHeight + extraSize * 2
 												}
-											: { top: hoveredIndex * (itemHeight + 8), left: 0, width: '100%', height: itemHeight }
+											: { top: selectedIndex * (itemHeight + 8), left: 0, width: '100%', height: itemHeight }
 									}
 									transition={{
 										type: 'spring',
@@ -173,11 +167,11 @@ export default function NavCard() {
 										key={item.href}
 										href={item.href}
 										className={cn('text-secondary text-md relative z-10 flex items-center gap-3 rounded-full px-5 py-3', form === 'icons' && 'p-0')}
-										onMouseEnter={() => setHoveredIndex(index)}>
+										onMouseEnter={() => setHovered({ pathname, index })}>
 										<div className='flex h-7 w-7 items-center justify-center'>
-											{hoveredIndex == index ? <item.iconActive className='text-brand absolute h-7 w-7' /> : <item.icon className='absolute h-7 w-7' />}
+											{selectedIndex == index ? <item.iconActive className='text-brand absolute h-7 w-7' /> : <item.icon className='absolute h-7 w-7' />}
 										</div>
-										{form !== 'icons' && <span className={clsx(index == hoveredIndex && 'text-primary font-medium')}>{item.label}</span>}
+										{form !== 'icons' && <span className={clsx(index == selectedIndex && 'text-primary font-medium')}>{item.label}</span>}
 									</Link>
 								))}
 							</div>

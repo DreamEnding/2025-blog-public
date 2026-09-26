@@ -23,7 +23,7 @@ export default function BeianCard() {
 
 	return (
 		<HomeDraggableLayer cardKey='beianCard' x={x} y={y} width={styles.width} height={styles.height}>
-			<Card order={styles.order} width={styles.width} height={styles.height} x={x} y={y} className='flex items-center justify-center'>
+			<Card width={styles.width} height={styles.height} x={x} y={y} className='flex items-center justify-center'>
 				{beian.link ? (
 					<Link href={beian.link} target='_blank' rel='noopener noreferrer' className='text-secondary text-xs transition-opacity hover:opacity-80'>
 						{beian.text}

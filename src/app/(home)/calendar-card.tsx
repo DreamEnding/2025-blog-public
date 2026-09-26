@@ -27,7 +27,7 @@ export default function CalendarCard() {
 
 	return (
 		<HomeDraggableLayer cardKey='calendarCard' x={x} y={y} width={styles.width} height={styles.height}>
-			<Card order={styles.order} width={styles.width} height={styles.height} x={x} y={y} className='flex flex-col'>
+			<Card width={styles.width} height={styles.height} x={x} y={y} className='flex flex-col'>
 				{siteContent.enableChristmas && (
 					<>
 						<img
