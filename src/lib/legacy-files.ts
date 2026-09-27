@@ -7,7 +7,6 @@ export type FileChange = { path: string; content?: string; delete?: boolean }
 const listPaths = new Set([
 	'src/app/about/list.json',
 	'src/app/bloggers/list.json',
-	'src/app/pictures/list.json',
 	'src/app/projects/list.json',
 	'src/app/share/list.json',
 	'src/app/snippets/list.json',

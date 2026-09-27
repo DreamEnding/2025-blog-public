@@ -15,6 +15,7 @@ import {
 	withdrawEntry
 } from '../src/lib/site-actions'
 import { db, entries, publicEntry, resetDbForTests, sections, settings } from '../src/lib/site-db'
+import { renderMarkdown } from '../src/lib/markdown-renderer'
 
 const temp = mkdtempSync(path.join(tmpdir(), 'docs-site-test-'))
 before(() => {
@@ -32,6 +33,22 @@ test('initializes only fixed content sections', () => {
 	)
 	assert.throws(() => createSection(), /栏目固定/)
 	assert.throws(() => deleteSection(), /栏目固定/)
+})
+
+test('imports the Nexus AI tutorial once with renderable public image paths', async () => {
+	const tutorial = entries().find(item => item.public_title === 'Nexus AI 使用教程')
+	assert.ok(tutorial)
+	assert.equal(sections().find(item => item.id === tutorial.section_id)?.name, '使用教程')
+	assert.equal((tutorial.public_body?.match(/!\[[^\]]+\]\(\/tutorials\/nexus-ai\/image/g) || []).length, 8)
+	const rendered = await renderMarkdown(tutorial.public_body || '')
+	assert.equal((rendered.html.match(/<img src="\/tutorials\/nexus-ai\/image/g) || []).length, 8)
+	assert.deepEqual(
+		rendered.toc.filter(item => item.level === 2).map(item => item.text),
+		['准备工作', '创建 API 密钥', '导入 CC Switch']
+	)
+	resetDbForTests()
+	assert.equal(entries().filter(item => item.public_title === 'Nexus AI 使用教程').length, 1)
+	db().prepare('DELETE FROM entries WHERE id = ?').run(tutorial.id)
 })
 
 test('keeps drafts private until publication and retains public version while editing', () => {

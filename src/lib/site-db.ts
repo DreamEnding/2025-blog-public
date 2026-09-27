@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3'
-import { existsSync, mkdirSync, readdirSync, renameSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync } from 'node:fs'
 import path from 'node:path'
 
 export type Section = { id: number; name: string; kind: 'docs' | 'articles'; parent_id: number | null; position: number }
@@ -119,6 +120,51 @@ export function db() {
 			insert.run('AI 技术分享', 'articles', 2)
 			connection!.prepare("INSERT INTO meta (key, value) VALUES ('content_redesign_20260925', '1')").run()
 		})()
+	}
+	if (!connection.prepare("SELECT 1 FROM meta WHERE key = 'nexus_ai_tutorial_imported'").get()) {
+		const tutorialSection = connection.prepare("SELECT id FROM sections WHERE name = '使用教程'").get() as { id: number } | undefined
+		if (tutorialSection) {
+			const body = readFileSync(path.join(process.cwd(), 'public', 'tutorials', 'nexus-ai', 'tutorial.md'), 'utf8').trim()
+			connection.transaction(() => {
+				const existing = connection!.prepare("SELECT 1 FROM entries WHERE section_id = ? AND title = 'Nexus AI 使用教程'").get(tutorialSection.id)
+				if (!existing) {
+					connection!
+						.prepare(
+							`INSERT INTO entries (section_id, title, summary, body, position, published,
+							public_title, public_summary, public_body, public_section_id, public_position, published_at)
+							VALUES (?, ?, ?, ?, 0, 1, ?, ?, ?, ?, 0, ?)`
+						)
+						.run(
+							tutorialSection.id,
+							'Nexus AI 使用教程',
+							'从创建 API 密钥到导入 CC Switch 并选择模型。',
+							body,
+							'Nexus AI 使用教程',
+							'从创建 API 密钥到导入 CC Switch 并选择模型。',
+							body,
+							tutorialSection.id,
+							new Date().toISOString()
+						)
+				}
+				connection!.prepare("INSERT INTO meta (key, value) VALUES ('nexus_ai_tutorial_imported', '1')").run()
+			})()
+		}
+	}
+	if (!connection.prepare("SELECT 1 FROM meta WHERE key = 'nexus_ai_tutorial_outline_20260927'").get()) {
+		const tutorial = connection.prepare("SELECT id, body, public_body FROM entries WHERE title = 'Nexus AI 使用教程' ORDER BY id LIMIT 1").get() as
+			| { id: number; body: string; public_body: string | null }
+			| undefined
+		if (tutorial) {
+			const oldBodyHash = '1937414239f296bdd7c355fd78f59fea4cbb7950c7a0b8c37ae38a5ce37171e7'
+			const isOriginal = (body: string | null) => body !== null && createHash('sha256').update(body).digest('hex') === oldBodyHash
+			if (isOriginal(tutorial.body) || isOriginal(tutorial.public_body)) {
+				const body = readFileSync(path.join(process.cwd(), 'public', 'tutorials', 'nexus-ai', 'tutorial.md'), 'utf8').trim()
+				connection
+					.prepare('UPDATE entries SET body = ?, public_body = ? WHERE id = ?')
+					.run(isOriginal(tutorial.body) ? body : tutorial.body, isOriginal(tutorial.public_body) ? body : tutorial.public_body, tutorial.id)
+			}
+		}
+		connection.prepare("INSERT INTO meta (key, value) VALUES ('nexus_ai_tutorial_outline_20260927', '1')").run()
 	}
 	return connection
 }
