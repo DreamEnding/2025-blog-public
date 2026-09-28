@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Cloud, ListTree } from 'lucide-react'
 import { useMarkdownRender } from '@/hooks/use-markdown-render'
 
-export function DocsMarkdown({ body, tutorial = false }: { body: string; tutorial?: boolean }) {
+export function DocsMarkdown({ body, tutorial = false, tocTitle = '文章目录' }: { body: string; tutorial?: boolean; tocTitle?: string }) {
 	const { content, toc, loading } = useMarkdownRender(body)
 	const [activeId, setActiveId] = useState('')
 	const [progress, setProgress] = useState(0)
@@ -35,7 +35,7 @@ export function DocsMarkdown({ body, tutorial = false }: { body: string; tutoria
 		<div className={tutorial ? 'tutorial-reader' : 'docs-reader-grid'}>
 			<article className={tutorial ? 'docs-article prose tutorial-article' : 'docs-article prose'}>{loading ? '正在渲染…' : content}</article>
 			{tutorial ? (
-				<aside className={`tutorial-toc${tocOpen ? 'is-open' : ''}`} aria-label='文章目录'>
+				<aside className={`tutorial-toc${tocOpen ? 'is-open' : ''}`} aria-label={tocTitle}>
 					<button className='tutorial-toc-toggle' type='button' aria-expanded={tocOpen} onClick={() => setTocOpen(!tocOpen)}>
 						<ListTree size={18} aria-hidden='true' />
 						目录 <span>{progress}%</span>
@@ -43,7 +43,7 @@ export function DocsMarkdown({ body, tutorial = false }: { body: string; tutoria
 					<div className='tutorial-toc-panel'>
 						<div className='tutorial-toc-head'>
 							<ListTree size={19} aria-hidden='true' />
-							<strong>文章目录</strong>
+							<strong>{tocTitle}</strong>
 							<span>{progress}%</span>
 						</div>
 						<div className='tutorial-toc-progress' aria-hidden='true'>

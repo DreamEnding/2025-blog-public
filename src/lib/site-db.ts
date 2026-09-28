@@ -166,6 +166,39 @@ export function db() {
 		}
 		connection.prepare("INSERT INTO meta (key, value) VALUES ('nexus_ai_tutorial_outline_20260927', '1')").run()
 	}
+	if (!connection.prepare("SELECT 1 FROM meta WHERE key = 'nexus_api_docs_imported_20260927'").get()) {
+		const apiSection = connection.prepare("SELECT id FROM sections WHERE name = 'API 文档'").get() as { id: number } | undefined
+		if (apiSection) {
+			connection.transaction(() => {
+				const existing = connection!
+					.prepare('SELECT 1 FROM entries WHERE section_id = ? OR (published = 1 AND public_section_id = ?) LIMIT 1')
+					.get(apiSection.id, apiSection.id)
+				if (!existing) {
+					const body = readFileSync(path.join(process.cwd(), 'docs', 'API docs.md'), 'utf8')
+						.trim()
+						.replace(/^# Nexus API 文档\r?\n+/, '')
+					connection!
+						.prepare(
+							`INSERT INTO entries (section_id, title, summary, body, position, published,
+							public_title, public_summary, public_body, public_section_id, public_position, published_at)
+							VALUES (?, ?, ?, ?, 0, 1, ?, ?, ?, ?, 0, ?)`
+						)
+						.run(
+							apiSection.id,
+							'Nexus API 文档',
+							'Nexus API 的认证、模型查询与常用兼容接口接入示例。',
+							body,
+							'Nexus API 文档',
+							'Nexus API 的认证、模型查询与常用兼容接口接入示例。',
+							body,
+							apiSection.id,
+							new Date().toISOString()
+						)
+				}
+				connection!.prepare("INSERT INTO meta (key, value) VALUES ('nexus_api_docs_imported_20260927', '1')").run()
+			})()
+		}
+	}
 	return connection
 }
 

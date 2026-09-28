@@ -51,6 +51,19 @@ test('imports the Nexus AI tutorial once with renderable public image paths', as
 	db().prepare('DELETE FROM entries WHERE id = ?').run(tutorial.id)
 })
 
+test('imports the Nexus API reference once without generic gateway content', async () => {
+	const apiDoc = entries().find(item => item.public_title === 'Nexus API 文档')
+	assert.ok(apiDoc)
+	assert.equal(sections().find(item => item.id === apiDoc.section_id)?.name, 'API 文档')
+	assert.match(apiDoc.public_body || '', /https:\/\/www\.chream\.me\/v1/)
+	assert.doesNotMatch(apiDoc.public_body || '', /Sub2API|backend-api\/codex/i)
+	const rendered = await renderMarkdown(apiDoc.public_body || '')
+	assert.ok(rendered.toc.some(item => item.text === 'OpenAI 兼容接口'))
+	resetDbForTests()
+	assert.equal(entries().filter(item => item.public_title === 'Nexus API 文档').length, 1)
+	db().prepare('DELETE FROM entries WHERE id = ?').run(apiDoc.id)
+})
+
 test('keeps drafts private until publication and retains public version while editing', () => {
 	const target = sections().find(item => item.name === 'API 文档')!
 	const id = Number(createEntry({ section_id: target.id, title: '调用 API' }))

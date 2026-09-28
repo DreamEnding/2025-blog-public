@@ -14,6 +14,7 @@ RUN useradd --system --uid 1001 --create-home app && mkdir /data && chown app:ap
 COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public
+COPY --from=build --chown=app:app ["/app/docs/API docs.md", "./docs/API docs.md"]
 USER app
 EXPOSE 3000
 CMD ["node", "server.js"]
