@@ -1,31 +1,22 @@
 import '@/styles/globals.css'
 import '@/styles/docs.css'
 
-import type { Metadata } from 'next'
+import type { Viewport } from 'next'
 import Layout from '@/layout'
 import Head from '@/layout/head'
 import siteContent from '@/config/site-content.json'
-import { settings } from '@/lib/site-db'
+import { siteConfig, siteSettings } from '@/lib/site-config'
+import { pageMetadata } from '@/lib/site-metadata'
 
 export const dynamic = 'force-dynamic'
 
-const {
-	meta: { title, description },
-	theme
-} = siteContent
+const { theme } = siteContent
 
-export const metadata: Metadata = {
-	title,
-	description,
-	openGraph: {
-		title,
-		description
-	},
-	twitter: {
-		title,
-		description
-	}
+export function generateMetadata() {
+	return pageMetadata('', '', '/')
 }
+
+export const viewport: Viewport = { width: 'device-width', initialScale: 1 }
 
 const htmlStyle = {
 	cursor: 'url(/images/cursor.svg) 2 1, auto',
@@ -40,10 +31,11 @@ const htmlStyle = {
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-	const docsSite = settings()
+	const config = siteConfig()
+	const docsSite = siteSettings()
 	return (
-		<html lang='en' suppressHydrationWarning style={htmlStyle}>
-			<Head />
+		<html lang='zh-CN' suppressHydrationWarning style={htmlStyle}>
+			<Head analyticsId={config.analyticsId} />
 
 			<body>
 				<script
@@ -56,7 +48,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 					}}
 				/>
 
-				<Layout docsSite={docsSite}>{children}</Layout>
+				<Layout docsSite={docsSite} initialSiteContent={config}>
+					{children}
+				</Layout>
 			</body>
 		</html>
 	)

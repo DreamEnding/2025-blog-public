@@ -4,6 +4,8 @@
 		"description": "Chream 的个人网站，分享 API 文档、使用教程和 AI 技术文章。",
 		"username": "Chream"
 	},
+	"logo": "/images/avatar.png",
+	"analyticsId": "",
 	"theme": {
 		"colorBrand": "#2fcbe7",
 		"colorPrimary": "#5B423F",
@@ -41,23 +43,9 @@
 		{
 			"id": "github",
 			"type": "github",
-			"value": "https://github.com/yysuni",
+			"value": "https://github.com/DreamEnding/2025-blog-public",
 			"label": "Github",
 			"order": 3
-		},
-		{
-			"id": "juejin",
-			"type": "juejin",
-			"value": "https://juejin.cn/user/2427311675422382",
-			"label": "稀土掘金",
-			"order": 2
-		},
-		{
-			"id": "email",
-			"type": "email",
-			"value": "yysuni1001@gmail.com",
-			"label": "",
-			"order": 1
 		}
 	],
 	"clockShowSeconds": false,

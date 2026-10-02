@@ -8,7 +8,7 @@ import { CARD_SPACING } from '@/consts'
 import Link from 'next/link'
 import { HomeDraggableLayer } from './home-draggable-layer'
 
-type ShareItem = { id: number; title: string; summary: string }
+type ShareItem = { id: number; title: string; summary: string; href: string }
 
 export default function ShareCard() {
 	const center = useCenterStore()
@@ -44,7 +44,7 @@ export default function ShareCard() {
 				<h2 className='text-secondary text-sm'>使用教程</h2>
 
 				{randomItem ? (
-					<Link href={`/articles/${randomItem.id}`} className='mt-2 block space-y-2'>
+					<Link href={randomItem.href} className='mt-2 block space-y-2'>
 						<div className='flex items-center'>
 							<h3 className='text-sm font-medium'>{randomItem.title}</h3>
 						</div>

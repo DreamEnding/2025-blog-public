@@ -135,14 +135,16 @@ export async function POST(request: Request, context: Context) {
 				backup.sections.some((row: { name: string; kind: string; parent_id: number | null }) => fixed.get(row.name) !== row.kind || row.parent_id !== null)
 			)
 				throw new Error('备份栏目必须是三个固定栏目')
-			const apiId = backup.sections.find((row: { name: string }) => row.name === 'API 文档').id
-			if (
-				backup.entries.filter(
-					(row: { section_id: number; public_section_id: number | null; published: number }) =>
-						row.section_id === apiId || (row.published && row.public_section_id === apiId)
-				).length > 1
-			)
-				throw new Error('API 文档最多保留一篇')
+			for (const name of ['API 文档', '使用教程']) {
+				const sectionId = backup.sections.find((row: { name: string }) => row.name === name).id
+				if (
+					backup.entries.filter(
+						(row: { section_id: number; public_section_id: number | null; published: number }) =>
+							row.section_id === sectionId || (row.published && row.public_section_id === sectionId)
+					).length > 1
+				)
+					throw new Error(`${name}最多保留一篇`)
+			}
 			const legacyFiles = backup.version === 3 ? backup.legacyFiles : []
 			const likes = backup.version === 3 ? backup.likes : []
 			if (!Array.isArray(legacyFiles) || !Array.isArray(likes) || legacyFiles.length > 20000 || likes.length > 20000) throw new Error('备份内容无效')

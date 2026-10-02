@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 export default function ArticleCard() {
 	const center = useCenterStore()
 	const { cardStyles, siteContent } = useConfigStore()
-	const [blog, setBlog] = useState<{ id: number; title: string; summary: string; published_at: string } | null>(null)
+	const [blog, setBlog] = useState<{ id: number; title: string; summary: string; published_at: string; href: string } | null>(null)
 	const [loading, setLoading] = useState(true)
 	useEffect(() => {
 		fetch('/api/content')
@@ -46,7 +46,7 @@ export default function ArticleCard() {
 						<span className='text-secondary text-xs'>加载中...</span>
 					</div>
 				) : blog ? (
-					<Link href={`/articles/${blog.id}`} className='flex transition-opacity hover:opacity-80'>
+					<Link href={blog.href} className='flex transition-opacity hover:opacity-80'>
 						<div className='text-secondary mr-3 grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/60'>+</div>
 						<div className='flex-1'>
 							<h3 className='line-clamp-1 text-sm font-medium'>{blog.title}</h3>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdmin, sameOrigin } from '@/lib/site-auth'
 import { listLegacyFiles, readLegacyFile, saveLegacyFiles } from '@/lib/legacy-files'
+import { siteConfig } from '@/lib/site-config'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,7 +23,10 @@ export async function GET(request: Request) {
 	try {
 		const prefix = url.searchParams.get('prefix')
 		if (prefix) return NextResponse.json({ files: await listLegacyFiles(prefix) }, { headers: { 'Cache-Control': 'no-store' } })
-		const filePath = url.searchParams.get('path') || (url.pathname.startsWith('/blogs/') || url.pathname.startsWith('/images/') || url.pathname === '/favicon.png' ? `public${url.pathname}` : '')
+		const filePath =
+			url.searchParams.get('path') ||
+			(url.pathname.startsWith('/blogs/') || url.pathname.startsWith('/images/') || url.pathname === '/favicon.png' ? `public${url.pathname}` : '')
+		if (filePath === 'src/config/site-content.json') return NextResponse.json(siteConfig(), { headers: { 'Cache-Control': 'no-store' } })
 		const content = await readLegacyFile(filePath)
 		if (!content) return NextResponse.json({ error: '文件不存在' }, { status: 404 })
 		const ext = filePath.split('.').pop()?.toLowerCase() || ''

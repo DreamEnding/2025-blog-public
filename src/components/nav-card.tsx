@@ -1,7 +1,6 @@
 'use client'
 
 import Card from '@/components/card'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'motion/react'
@@ -19,7 +18,7 @@ import { cn } from '@/lib/utils'
 import { useSize } from '@/hooks/use-size'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 import { HomeDraggableLayer } from '@/app/(home)/home-draggable-layer'
-import { BookOpenText } from 'lucide-react'
+import { BookOpenText, Search } from 'lucide-react'
 
 const list = [
 	{
@@ -51,6 +50,12 @@ const list = [
 		iconActive: AboutFilledSVG,
 		label: '关于网站',
 		href: '/about'
+	},
+	{
+		icon: Search,
+		iconActive: Search,
+		label: '搜索',
+		href: '/search'
 	}
 ]
 
@@ -84,7 +89,7 @@ export default function NavCard() {
 	if (maxSM && pathname !== '/') form = 'icons'
 
 	const itemHeight = form === 'full' ? 52 : 28
-	const iconGap = maxSM ? 12 : 24
+	const iconGap = maxSM ? 8 : 16
 
 	let position = useMemo(() => {
 		if (form === 'full') {
@@ -115,7 +120,7 @@ export default function NavCard() {
 					height={size.height}
 					x={position.x}
 					y={position.y}
-					className={clsx(form != 'full' && 'overflow-hidden', form === 'mini' && 'p-3', form === 'icons' && 'flex items-center gap-6 p-3 max-sm:gap-3')}>
+					className={clsx(form != 'full' && 'overflow-hidden', form === 'mini' && 'p-3', form === 'icons' && 'flex items-center gap-4 p-3 max-sm:gap-2')}>
 					{form === 'full' && siteContent.enableChristmas && (
 						<>
 							<img
@@ -128,9 +133,15 @@ export default function NavCard() {
 					)}
 
 					<Link className='flex items-center gap-3' href='/'>
-						<Image src='/images/avatar.png' alt='avatar' width={40} height={40} style={{ boxShadow: ' 0 12px 20px -5px #E2D9CE' }} className='rounded-full' />
+						<img
+							src={siteContent.logo || '/images/avatar.png'}
+							alt={siteContent.meta.title}
+							width={40}
+							height={40}
+							style={{ boxShadow: ' 0 12px 20px -5px #E2D9CE' }}
+							className='shrink-0 rounded-full'
+						/>
 						{form === 'full' && <span className='font-averia mt-1 text-2xl leading-none font-medium'>{siteContent.meta.title}</span>}
-						{form === 'full' && <span className='text-brand mt-2 text-xs font-medium'>(开发中)</span>}
 					</Link>
 
 					{(form === 'full' || form === 'icons') && (
@@ -138,7 +149,7 @@ export default function NavCard() {
 							{form !== 'icons' && <div className='text-secondary mt-6 text-sm uppercase'>General</div>}
 
 							<div
-								className={cn('relative mt-2 space-y-2', form === 'icons' && 'mt-0 flex items-center gap-6 space-y-0 max-sm:gap-3')}
+								className={cn('relative mt-2 space-y-2', form === 'icons' && 'mt-0 flex items-center gap-4 space-y-0 max-sm:gap-2')}
 								onMouseLeave={() => setHovered(null)}>
 								<motion.div
 									className='absolute max-w-[230px] rounded-full border'
@@ -166,6 +177,8 @@ export default function NavCard() {
 									<Link
 										key={item.href}
 										href={item.href}
+										aria-label={item.label}
+										aria-current={activeIndex === index ? 'page' : undefined}
 										className={cn('text-secondary text-md relative z-10 flex items-center gap-3 rounded-full px-5 py-3', form === 'icons' && 'p-0')}
 										onMouseEnter={() => setHovered({ pathname, index })}>
 										<div className='flex h-7 w-7 items-center justify-center'>

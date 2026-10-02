@@ -15,7 +15,7 @@ async function action(name: string, payload: Record<string, unknown> = {}) {
 	return result.result
 }
 
-export function AdminLogin() {
+export function AdminLogin({ logo = '/images/avatar.png' }: { logo?: string }) {
 	const router = useRouter()
 	const [username, setUsername] = useState('')
 	const [password, setPassword] = useState('')
@@ -34,7 +34,7 @@ export function AdminLogin() {
 	return (
 		<form className='docs-panel docs-login' onSubmit={submit}>
 			<div className='docs-login-identity'>
-				<img src='/images/avatar.png' alt='' />
+				<img src={logo} alt='' />
 				<span>站点管理</span>
 			</div>
 			<h1>管理员登录</h1>
@@ -65,6 +65,13 @@ export function AdminWorkspace({ writerOnly = false }: { writerOnly?: boolean })
 	const [busy, setBusy] = useState(false)
 	const [sectionForm, setSectionForm] = useState({ name: '', kind: 'docs', parent_id: '', position: 0 })
 	const [siteForm, setSiteForm] = useState<Record<string, string>>({})
+	const [newSectionId, setNewSectionId] = useState<number | null>(null)
+	const newSection = data?.sections.find(item => item.id === (newSectionId ?? data.sections[0]?.id))
+	const sectionFull = Boolean(
+		newSection &&
+			['API 文档', '使用教程'].includes(newSection.name) &&
+			data?.entries.some(item => item.section_id === newSection.id || (item.published && item.public_section_id === newSection.id))
+	)
 	const saved = data?.entries.find(item => item.id === currentId)
 	const dirty = Boolean(
 		draft &&
@@ -227,8 +234,8 @@ export function AdminWorkspace({ writerOnly = false }: { writerOnly?: boolean })
 				<div className='docs-admin-columns'>
 					<aside className='docs-panel'>
 						<h2>内容</h2>
-						<p>先选栏目，再创建文档。</p>
-						<select id='new-section' aria-label='新内容所属栏目'>
+						<p>API 文档和使用教程各保留一篇；AI 技术分享可发布多篇。</p>
+						<select id='new-section' aria-label='新内容所属栏目' value={newSection?.id} onChange={event => setNewSectionId(Number(event.target.value))}>
 							{data.sections.map(section => (
 								<option key={section.id} value={section.id}>
 									{section.parent_id ? '　↳ ' : ''}
@@ -237,8 +244,9 @@ export function AdminWorkspace({ writerOnly = false }: { writerOnly?: boolean })
 							))}
 						</select>
 						<button
+							disabled={busy || sectionFull}
 							onClick={async () => {
-								const section_id = Number((document.getElementById('new-section') as HTMLSelectElement).value)
+								const section_id = newSection!.id
 								const id = await run('create-entry', { section_id, title: '未命名文档' }, '草稿已创建')
 								if (id) {
 									const response = await fetch('/api/manage/data')
@@ -251,6 +259,7 @@ export function AdminWorkspace({ writerOnly = false }: { writerOnly?: boolean })
 							}}>
 							新建草稿
 						</button>
+						{sectionFull && <p>该栏目已有内容，请在下方选择并编辑。</p>}
 						<div className='docs-admin-list'>
 							{data.entries.map(item => (
 								<button className={item.id === currentId ? 'active' : ''} key={item.id} onClick={() => choose(item)} disabled={busy}>
@@ -456,18 +465,28 @@ export function AdminWorkspace({ writerOnly = false }: { writerOnly?: boolean })
 			{tab === 'settings' && (
 				<section className='docs-panel docs-settings'>
 					<h2>站点设置</h2>
+					<p>基本资料会同步到首页、导航、页面摘要和 RSS。外观与布局可在首页设置中调整。</p>
 					{(
 						[
 							['name', '网站名称'],
-							['logo', 'Logo URL'],
-							['intro', '首页介绍'],
+							['username', '作者名称'],
+							['logo', '头像 / Logo URL'],
+							['intro', '站点介绍'],
+							['githubUrl', 'GitHub 链接'],
+							['email', '联系邮箱'],
+							['juejinUrl', '掘金链接'],
+							['analyticsId', 'Google Analytics ID（留空停用）'],
 							['consoleUrl', '控制台 URL'],
 							['apiKeyUrl', '获取 API Key URL']
 						] as const
 					).map(([key, label]) => (
 						<label key={key}>
 							{label}
-							<input value={siteForm[key] || ''} onChange={event => setSiteForm({ ...siteForm, [key]: event.target.value })} />
+							{key === 'intro' ? (
+								<textarea rows={3} value={siteForm[key] || ''} onChange={event => setSiteForm({ ...siteForm, [key]: event.target.value })} />
+							) : (
+								<input value={siteForm[key] || ''} onChange={event => setSiteForm({ ...siteForm, [key]: event.target.value })} />
+							)}
 						</label>
 					))}
 					<label className='docs-upload'>

@@ -14,7 +14,11 @@ import { usePathname } from 'next/navigation'
 import { loadLegacyJson } from '@/lib/legacy-client'
 import { useCenterStore } from '@/hooks/use-center'
 
-export default function Layout({ children, docsSite }: PropsWithChildren<{ docsSite: Record<string, string> }>) {
+export default function Layout({
+	children,
+	docsSite,
+	initialSiteContent
+}: PropsWithChildren<{ docsSite: Record<string, string>; initialSiteContent: SiteContent }>) {
 	const pathname = usePathname()
 	useCenterInit()
 	useSizeInit()
@@ -22,24 +26,21 @@ export default function Layout({ children, docsSite }: PropsWithChildren<{ docsS
 	const { cardStyles, siteContent, regenerateKey, setSiteContent, setCardStyles } = useConfigStore()
 	const { maxSM, init } = useSize()
 	useEffect(() => {
-		loadLegacyJson<SiteContent>('src/config/site-content.json')
-			.then(value => {
-				setSiteContent(value)
-				for (const [key, color] of Object.entries({
-					'--color-brand': value.theme.colorBrand,
-					'--color-primary': value.theme.colorPrimary,
-					'--color-secondary': value.theme.colorSecondary,
-					'--color-brand-secondary': value.theme.colorBrandSecondary,
-					'--color-bg': value.theme.colorBg,
-					'--color-border': value.theme.colorBorder,
-					'--color-card': value.theme.colorCard,
-					'--color-article': value.theme.colorArticle
-				}))
-					document.documentElement.style.setProperty(key, color)
-			})
-			.catch(console.error)
+		const value = initialSiteContent
+		setSiteContent(value)
+		for (const [key, color] of Object.entries({
+			'--color-brand': value.theme.colorBrand,
+			'--color-primary': value.theme.colorPrimary,
+			'--color-secondary': value.theme.colorSecondary,
+			'--color-brand-secondary': value.theme.colorBrandSecondary,
+			'--color-bg': value.theme.colorBg,
+			'--color-border': value.theme.colorBorder,
+			'--color-card': value.theme.colorCard,
+			'--color-article': value.theme.colorArticle
+		}))
+			document.documentElement.style.setProperty(key, color)
 		loadLegacyJson<CardStyles>('src/config/card-styles.json').then(setCardStyles).catch(console.error)
-	}, [setSiteContent, setCardStyles])
+	}, [initialSiteContent, setSiteContent, setCardStyles])
 	if (/^\/(admin|docs|search|sections)(\/|$)/.test(pathname)) {
 		return (
 			<div className='docs-site'>
@@ -112,6 +113,20 @@ export default function Layout({ children, docsSite }: PropsWithChildren<{ docsS
 							← 返回主页
 						</Link>
 						<NavCard />
+						{(docsSite.consoleUrl || docsSite.apiKeyUrl) && (
+							<nav className='public-console-links' aria-label='Nexus 控制台入口'>
+								{docsSite.consoleUrl && (
+									<a href={docsSite.consoleUrl} target='_blank' rel='noreferrer'>
+										控制台
+									</a>
+								)}
+								{docsSite.apiKeyUrl && (
+									<a href={docsSite.apiKeyUrl} target='_blank' rel='noreferrer'>
+										获取 API Key
+									</a>
+								)}
+							</nav>
+						)}
 					</>
 				)}
 

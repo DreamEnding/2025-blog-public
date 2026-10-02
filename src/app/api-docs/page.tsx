@@ -1,7 +1,13 @@
-import { DocsMarkdown } from '@/components/docs-markdown'
+import { PublicMarkdown } from '@/components/public-markdown'
 import { publishedIn } from '@/lib/content-sections'
+import { pageMetadata } from '@/lib/site-metadata'
 
 export const dynamic = 'force-dynamic'
+
+export function generateMetadata() {
+	const item = publishedIn('API 文档')[0]
+	return pageMetadata(item?.public_title || 'API 文档', item?.public_summary || '', '/api-docs')
+}
 
 export default function ApiDocsPage() {
 	const item = publishedIn('API 文档')[0]
@@ -14,7 +20,7 @@ export default function ApiDocsPage() {
 						<h1>{item.public_title}</h1>
 						<p>{item.public_summary}</p>
 					</header>
-					<DocsMarkdown body={item.public_body || ''} tutorial tocTitle='接口目录' />
+					<PublicMarkdown body={item.public_body || ''} tutorial tocTitle='接口目录' />
 				</>
 			) : (
 				<>

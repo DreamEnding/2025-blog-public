@@ -22,13 +22,11 @@ export async function pushSiteContent(
 ): Promise<void> {
 	const token = await getAuthToken()
 
-	toast.info('正在获取分支信息...')
+	toast.info('正在准备站点配置...')
 	const refData = await getRef(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, `heads/${GITHUB_CONFIG.BRANCH}`)
 	const latestCommitSha = refData.sha
 
 	const commitMessage = `更新站点配置`
-
-	toast.info('正在准备文件...')
 
 	const treeItems: TreeItem[] = []
 
@@ -169,7 +167,7 @@ export async function pushSiteContent(
 	}
 
 	// Handle site content JSON
-	const siteContentJson = JSON.stringify(siteContent, null, '\t')
+	const siteContentJson = JSON.stringify({ ...siteContent, logo: avatarItem?.type === 'file' ? '/images/avatar.png' : siteContent.logo }, null, '\t')
 	const siteContentBlob = await createBlob(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, toBase64Utf8(siteContentJson), 'base64')
 	treeItems.push({
 		path: 'src/config/site-content.json',
@@ -188,13 +186,11 @@ export async function pushSiteContent(
 		sha: cardStylesBlob.sha
 	})
 
-	toast.info('正在创建文件树...')
 	const treeData = await createTree(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, treeItems, latestCommitSha)
 
-	toast.info('正在创建提交...')
 	const commitData = await createCommit(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, commitMessage, treeData.sha, [latestCommitSha])
 
-	toast.info('正在更新分支...')
+	toast.info('正在保存站点配置...')
 	await updateRef(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, `heads/${GITHUB_CONFIG.BRANCH}`, commitData.sha)
 
 	toast.success('保存成功！')

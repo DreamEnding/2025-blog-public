@@ -21,7 +21,7 @@ docker compose up -d
 docker compose ps
 ```
 
-访问 `SITE_URL` 查看网站，访问 `/admin` 使用上面设置的账号登录。首启时自动创建 SQLite 数据库和五个空栏目。后台保存和发布的内容立即生效，无需重建镜像。站点地图和 RSS 在容器运行时读取 `SITE_URL`；修改域名后重新执行 `docker compose up -d`。
+访问 `SITE_URL` 查看网站，访问 `/admin` 使用上面设置的账号登录。首启时自动创建 SQLite 数据库和三个固定栏目，并导入 API 文档与 Nexus AI 使用教程；AI 技术分享初始为空。API 文档与使用教程各限一篇。后台保存和发布的内容立即生效，无需重建镜像。页面 Canonical、站点地图和 RSS 在容器运行时读取 `SITE_URL`；修改域名后重新执行 `docker compose up -d`。
 
 ## 更新与备份
 
@@ -34,5 +34,7 @@ docker compose up -d
 更新和重建容器不会删除 `site_data` 卷。该卷保存 `/data/site.db`、SQLite WAL 文件和 `/data/uploads/`。升级前在后台“备份恢复”下载 JSON 备份并妥善保存；备份包含栏目、草稿、公开版本、设置和图片。恢复到空实例时，先部署并登录，再上传备份。恢复会覆盖当前全部栏目、文档、设置和图片。
 
 还应定期备份 Docker 卷；复制卷文件前停止容器，避免 SQLite 数据库与 WAL 文件不一致。不要运行 `docker compose down -v`，该命令会删除数据卷。
+
+从早期栏目或旧博客版本升级时，先保存完整数据卷副本。当前初始化包含一次性内容迁移：备份数据库为 `site-before-content-redesign.db`，将非空上传目录保留为 `uploads-before-content-redesign`，然后清空旧栏目、文章、旧博客覆盖文件与点赞，建立三个固定栏目。当前后台恢复只接受这三个栏目，且 API 文档和使用教程各最多一篇；旧备份须先整理为当前内容结构，不能直接导入。需要回退历史实例时，应恢复升级前的完整数据卷并使用相应旧镜像。
 
 部署在反向代理后时，使用 HTTPS，并转发原始 `Host`、`X-Forwarded-Host` 和 `X-Forwarded-Proto` 请求头；后台修改请求会校验来源域名。不要将 `.env` 或数据卷暴露为静态文件。镜像同时提供 Linux `amd64` 和 `arm64` 版本。

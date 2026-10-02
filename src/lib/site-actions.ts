@@ -1,4 +1,5 @@
-import { db, entries, sections, settings, type Entry, type Section } from './site-db'
+import { db, entries, sections, type Entry, type Section } from './site-db'
+import { siteConfig, siteSettings } from './site-config'
 
 function required(value: unknown, label: string, max = 160) {
 	if (typeof value !== 'string' || !value.trim() || value.length > max) throw new Error(`${label}无效`)
@@ -26,12 +27,12 @@ function section(value: unknown) {
 	return found
 }
 
-function checkApiLimit(target: Section, currentId?: number) {
-	if (target.name !== 'API 文档') return
+function checkEntryLimit(target: Section, currentId?: number) {
+	if (target.name !== 'API 文档' && target.name !== '使用教程') return
 	const existing = db()
 		.prepare('SELECT id FROM entries WHERE (section_id = ? OR (published = 1 AND public_section_id = ?)) AND id != ? LIMIT 1')
 		.get(target.id, target.id, currentId ?? -1)
-	if (existing) throw new Error('API 文档最多保留一篇')
+	if (existing) throw new Error(`${target.name}最多保留一篇`)
 }
 
 function entry(value: unknown) {
@@ -54,7 +55,7 @@ export function deleteSection() {
 
 export function createEntry(input: Record<string, unknown>) {
 	const target = section(input.section_id)
-	checkApiLimit(target)
+	checkEntryLimit(target)
 	const title = required(input.title, '标题')
 	const max = db().prepare('SELECT COALESCE(MAX(position), -1) + 1 AS next FROM entries WHERE section_id = ?').get(target.id) as { next: number }
 	return db().prepare('INSERT INTO entries (section_id, title, position) VALUES (?, ?, ?)').run(target.id, title, max.next).lastInsertRowid
@@ -63,7 +64,7 @@ export function createEntry(input: Record<string, unknown>) {
 export function saveEntry(input: Record<string, unknown>) {
 	const current = entry(input.id)
 	const target = section(input.section_id)
-	checkApiLimit(target, current.id)
+	checkEntryLimit(target, current.id)
 	db()
 		.prepare('UPDATE entries SET section_id = ?, title = ?, summary = ?, body = ?, position = ? WHERE id = ?')
 		.run(
@@ -79,7 +80,7 @@ export function saveEntry(input: Record<string, unknown>) {
 export function publishEntry(input: Record<string, unknown>) {
 	const current = entry(input.id)
 	if (!current.title.trim() || !current.body.trim()) throw new Error('标题和正文不能为空')
-	checkApiLimit(section(current.section_id), current.id)
+	checkEntryLimit(section(current.section_id), current.id)
 	db()
 		.prepare(
 			`UPDATE entries SET previous_title = public_title, previous_summary = public_summary, previous_body = public_body,
@@ -97,7 +98,7 @@ export function withdrawEntry(input: Record<string, unknown>) {
 export function restoreEntry(input: Record<string, unknown>) {
 	const current = entry(input.id)
 	if (!current.previous_title || current.previous_body == null) throw new Error('没有可恢复的上一次发布版本')
-	checkApiLimit(section(current.previous_section_id), current.id)
+	checkEntryLimit(section(current.previous_section_id), current.id)
 	db()
 		.prepare(
 			`UPDATE entries SET title = previous_title, summary = previous_summary, body = previous_body, section_id = previous_section_id, position = previous_position,
@@ -121,22 +122,50 @@ export function deleteEntry(input: Record<string, unknown>) {
 }
 
 export function saveSettings(input: Record<string, unknown>) {
-	const keys = ['name', 'logo', 'intro', 'consoleUrl', 'apiKeyUrl'] as const
+	const current = siteSettings()
+	const keys = ['name', 'username', 'logo', 'intro', 'consoleUrl', 'apiKeyUrl', 'githubUrl', 'email', 'juejinUrl', 'analyticsId'] as const
 	const values = keys.map(key => {
-		const value = optional(input[key], key, key === 'intro' ? 2000 : 500)
+		const value = optional(input[key] ?? current[key], key, key === 'intro' ? 2000 : 500)
 		if (
-			(key === 'consoleUrl' || key === 'apiKeyUrl' || key === 'logo') &&
+			['consoleUrl', 'apiKeyUrl', 'logo', 'githubUrl', 'juejinUrl'].includes(key) &&
 			value &&
 			!/^https?:\/\//.test(value) &&
-			!(key === 'logo' && value.startsWith('/api/uploads/'))
+			!(key === 'logo' && /^\/(?:api\/uploads|images)\//.test(value))
 		)
 			throw new Error(`${key} 必须是 HTTP(S) 地址`)
 		if (key === 'name' && !value) throw new Error('网站名称不能为空')
+		if (key === 'email' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) throw new Error('联系邮箱无效')
+		if (key === 'analyticsId' && value && !/^G-[A-Z0-9]+$/.test(value)) throw new Error('统计 ID 无效')
 		return [key, value] as const
 	})
+	const updated = Object.fromEntries(values)
+	const config = siteConfig()
+	config.meta = { title: updated.name, username: updated.username, description: updated.intro }
+	config.logo = updated.logo || '/images/avatar.png'
+	config.analyticsId = updated.analyticsId
+	for (const [type, key] of [
+		['github', 'githubUrl'],
+		['email', 'email'],
+		['juejin', 'juejinUrl']
+	] as const) {
+		const existing = config.socialButtons.find(button => button.type === type)
+		config.socialButtons = config.socialButtons.filter(button => button.type !== type)
+		if (updated[key])
+			config.socialButtons.push({
+				id: existing?.id || type,
+				type,
+				value: updated[key],
+				label: existing?.label || type,
+				order: existing?.order ?? config.socialButtons.length + 1
+			})
+	}
 	db().transaction(() => {
 		const statement = db().prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
-		for (const [key, value] of values) statement.run(key, value)
+		for (const key of ['consoleUrl', 'apiKeyUrl']) statement.run(key, updated[key])
+		db().prepare("DELETE FROM settings WHERE key IN ('name', 'logo', 'intro')").run()
+		db()
+			.prepare('INSERT INTO legacy_files (path, content, deleted) VALUES (?, ?, 0) ON CONFLICT(path) DO UPDATE SET content = excluded.content, deleted = 0')
+			.run('src/config/site-content.json', Buffer.from(JSON.stringify(config)))
 	})()
 }
 
@@ -158,5 +187,5 @@ export function publicSearch(query: string) {
 }
 
 export function adminData() {
-	return { sections: sections(), entries: entries(true), settings: settings() }
+	return { sections: sections(), entries: entries(true), settings: siteSettings() }
 }

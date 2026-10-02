@@ -24,10 +24,12 @@ export default function Page() {
 	const hideEditButton = siteContent.hideEditButton ?? false
 
 	useEffect(() => {
-		loadLegacyJson<AboutData>('src/app/about/list.json').then(value => {
-			setData(value)
-			setOriginalData(value)
-		}).catch(console.error)
+		loadLegacyJson<AboutData>('src/app/about/list.json')
+			.then(value => {
+				setData(value)
+				setOriginalData(value)
+			})
+			.catch(console.error)
 	}, [])
 
 	const handleSaveClick = () => {
@@ -152,7 +154,7 @@ export default function Page() {
 
 					<div className='mt-8 flex items-center justify-center gap-6'>
 						<motion.a
-							href='https://github.com/YYsuni/2025-blog-public'
+							href='https://github.com/DreamEnding/2025-blog-public'
 							target='_blank'
 							rel='noreferrer'
 							initial={{ opacity: 0, scale: 0.6 }}

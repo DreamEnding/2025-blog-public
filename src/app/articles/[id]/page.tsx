@@ -1,9 +1,17 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { DocsMarkdown } from '@/components/docs-markdown'
+import { PublicMarkdown } from '@/components/public-markdown'
 import { publicEntry, sections } from '@/lib/site-db'
+import { pageMetadata } from '@/lib/site-metadata'
+import { entryPath } from '@/lib/content-sections'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+	const item = publicEntry(Number((await params).id))
+	if (!item) return { title: '内容不存在', robots: { index: false, follow: false } }
+	return pageMetadata(item.public_title || '', item.public_summary || '', entryPath(item))
+}
 
 export default async function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
 	const id = (await params).id
@@ -17,7 +25,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
 			<Link href='/ai-sharing'>← {name}</Link>
 			<h1>{item.public_title}</h1>
 			<p className='docs-summary'>{item.public_summary}</p>
-			<DocsMarkdown body={item.public_body || ''} />
+			<PublicMarkdown body={item.public_body || ''} />
 		</main>
 	)
 }

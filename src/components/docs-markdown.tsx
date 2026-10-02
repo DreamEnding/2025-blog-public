@@ -2,10 +2,22 @@
 
 import { useEffect, useState } from 'react'
 import { Cloud, ListTree } from 'lucide-react'
+import clsx from 'clsx'
 import { useMarkdownRender } from '@/hooks/use-markdown-render'
+import type { MarkdownRenderResult } from '@/lib/markdown-renderer'
 
-export function DocsMarkdown({ body, tutorial = false, tocTitle = '文章目录' }: { body: string; tutorial?: boolean; tocTitle?: string }) {
-	const { content, toc, loading } = useMarkdownRender(body)
+export function DocsMarkdown({
+	body,
+	tutorial = false,
+	tocTitle = '文章目录',
+	rendered
+}: {
+	body: string
+	tutorial?: boolean
+	tocTitle?: string
+	rendered?: MarkdownRenderResult
+}) {
+	const { content, toc, loading } = useMarkdownRender(body, rendered)
 	const [activeId, setActiveId] = useState('')
 	const [progress, setProgress] = useState(0)
 	const [tocOpen, setTocOpen] = useState(false)
@@ -35,7 +47,7 @@ export function DocsMarkdown({ body, tutorial = false, tocTitle = '文章目录'
 		<div className={tutorial ? 'tutorial-reader' : 'docs-reader-grid'}>
 			<article className={tutorial ? 'docs-article prose tutorial-article' : 'docs-article prose'}>{loading ? '正在渲染…' : content}</article>
 			{tutorial ? (
-				<aside className={`tutorial-toc${tocOpen ? 'is-open' : ''}`} aria-label={tocTitle}>
+				<aside className={clsx('tutorial-toc', tocOpen && 'is-open')} aria-label={tocTitle}>
 					<button className='tutorial-toc-toggle' type='button' aria-expanded={tocOpen} onClick={() => setTocOpen(!tocOpen)}>
 						<ListTree size={18} aria-hidden='true' />
 						目录 <span>{progress}%</span>
@@ -53,7 +65,7 @@ export function DocsMarkdown({ body, tutorial = false, tocTitle = '文章目录'
 							{toc.map(item => (
 								<a
 									key={item.id}
-									className={`${item.level === 3 ? 'tutorial-toc-sub' : 'tutorial-toc-section'}${activeId === item.id ? 'active' : ''}`}
+									className={clsx(item.level === 3 ? 'tutorial-toc-sub' : 'tutorial-toc-section', activeId === item.id && 'active')}
 									href={`#${item.id}`}
 									aria-current={activeId === item.id ? 'location' : undefined}
 									onClick={() => setTocOpen(false)}>

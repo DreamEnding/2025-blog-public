@@ -1,7 +1,13 @@
-import { DocsMarkdown } from '@/components/docs-markdown'
+import { PublicMarkdown } from '@/components/public-markdown'
 import { publishedIn } from '@/lib/content-sections'
+import { pageMetadata } from '@/lib/site-metadata'
 
 export const dynamic = 'force-dynamic'
+
+export function generateMetadata() {
+	const tutorial = publishedIn('使用教程')[0]
+	return pageMetadata(tutorial?.public_title || '使用教程', tutorial?.public_summary || '', '/tutorials')
+}
 
 export default function TutorialsPage() {
 	const tutorial = publishedIn('使用教程')[0]
@@ -14,7 +20,7 @@ export default function TutorialsPage() {
 						<h1>{tutorial.public_title}</h1>
 						<p>{tutorial.public_summary}</p>
 					</header>
-					<DocsMarkdown body={tutorial.public_body || ''} tutorial />
+					<PublicMarkdown body={tutorial.public_body || ''} tutorial />
 				</>
 			) : (
 				<p className='docs-empty'>教程即将发布。</p>

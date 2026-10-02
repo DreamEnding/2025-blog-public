@@ -6,13 +6,14 @@ import { hashFileSHA256 } from '@/lib/file-utils'
 import type { FileItem } from './types'
 
 interface FaviconAvatarUploadProps {
+	avatarUrl: string
 	faviconItem: FileItem | null
 	setFaviconItem: React.Dispatch<React.SetStateAction<FileItem | null>>
 	avatarItem: FileItem | null
 	setAvatarItem: React.Dispatch<React.SetStateAction<FileItem | null>>
 }
 
-export function FaviconAvatarUpload({ faviconItem, setFaviconItem, avatarItem, setAvatarItem }: FaviconAvatarUploadProps) {
+export function FaviconAvatarUpload({ faviconItem, setFaviconItem, avatarItem, setAvatarItem, avatarUrl }: FaviconAvatarUploadProps) {
 	const faviconInputRef = useRef<HTMLInputElement>(null)
 	const avatarInputRef = useRef<HTMLInputElement>(null)
 
@@ -72,7 +73,7 @@ export function FaviconAvatarUpload({ faviconItem, setFaviconItem, avatarItem, s
 					{avatarItem?.type === 'file' ? (
 						<img src={avatarItem.previewUrl} alt='avatar preview' className='h-full w-full object-cover' />
 					) : (
-						<img src='/images/avatar.png' alt='current avatar' className='h-full w-full object-cover' />
+						<img src={avatarUrl || '/images/avatar.png'} alt='current avatar' className='h-full w-full object-cover' />
 					)}
 					<div className='pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100'>
 						<span className='text-xs text-white'>{avatarItem ? '更换' : '上传'}</span>

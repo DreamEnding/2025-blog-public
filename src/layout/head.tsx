@@ -1,11 +1,8 @@
 import Script from 'next/script'
 
-export default function Head() {
+export default function Head({ analyticsId }: { analyticsId: string }) {
 	return (
 		<head>
-			<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
-			<link rel='manifest' href='/manifest.json' />
-
 			<link rel='icon' href='/favicon.png' />
 
 			<link rel='preconnect' href='https://fonts.googleapis.cn' />
@@ -13,16 +10,20 @@ export default function Head() {
 
 			<link href='https://fonts.googleapis.cn/css2?family=Averia+Gruesa+Libre&display=swap' rel='stylesheet' />
 
-			<Script src='https://www.googletagmanager.com/gtag/js?id=G-ZNSFR7C9PM' />
-			<Script id='google-analytics'>
-				{`
+			{analyticsId && /^G-[A-Z0-9]+$/.test(analyticsId) && (
+				<>
+					<Script src={`https://www.googletagmanager.com/gtag/js?id=${analyticsId}`} />
+					<Script id='google-analytics'>
+						{`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
 
-          gtag('config', 'G-ZNSFR7C9PM');
+          gtag('config', ${JSON.stringify(analyticsId)});
         `}
-			</Script>
+					</Script>
+				</>
+			)}
 		</head>
 	)
 }

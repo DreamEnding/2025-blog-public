@@ -57,9 +57,22 @@
 .site-public-page > .docs-container {
 	padding-top: 80px;
 }
+.public-console-links {
+	position: absolute;
+	top: 20px;
+	right: 24px;
+	z-index: 40;
+	display: flex;
+	gap: 16px;
+	font-size: 14px;
+}
 @media (max-width: 639px) {
 	.site-public-page > .docs-container {
 		padding-top: 144px;
+	}
+	.public-console-links {
+		right: 16px;
+		font-size: 12px;
 	}
 }
 .docs-home {

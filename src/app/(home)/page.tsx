@@ -32,7 +32,7 @@ export default function Home() {
 
 	const handleSave = () => {
 		saveEditing()
-		toast.success('首页布局偏移已保存（尚未提交到远程配置）')
+		toast.success('首页布局偏移已保存，发布到站点请在设置中保存配置')
 	}
 
 	const handleCancel = () => {
