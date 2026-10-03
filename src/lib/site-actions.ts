@@ -65,16 +65,11 @@ export function saveEntry(input: Record<string, unknown>) {
 	const current = entry(input.id)
 	const target = section(input.section_id)
 	checkEntryLimit(target, current.id)
+	if (typeof input.body !== 'string' || input.body.length > 1_000_000) throw new Error('正文无效')
 	db()
 		.prepare('UPDATE entries SET section_id = ?, title = ?, summary = ?, body = ?, position = ? WHERE id = ?')
-		.run(
-			target.id,
-			required(input.title, '标题'),
-			optional(input.summary, '摘要', 1000),
-			optional(input.body, '正文', 1_000_000),
-			position(input.position),
-			current.id
-		)
+		.run(target.id, required(input.title, '标题'), optional(input.summary, '摘要', 1000), input.body, position(input.position), current.id)
+	return entry(current.id)
 }
 
 export function publishEntry(input: Record<string, unknown>) {

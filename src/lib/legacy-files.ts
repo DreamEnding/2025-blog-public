@@ -28,7 +28,9 @@ export async function readLegacyFile(filePath: string) {
 	const row = filesDb().prepare('SELECT content, deleted FROM legacy_files WHERE path = ?').get(filePath) as { content: Buffer | null; deleted: number } | undefined
 	if (row) return row.deleted ? null : row.content
 	try {
-		return await readFile(path.join(process.cwd(), filePath))
+		return await readFile(
+			filePath.startsWith('public/') ? path.join(process.cwd(), 'public', filePath.slice(7)) : path.join(process.cwd(), 'src', filePath.slice(4))
+		)
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
 		throw error
@@ -40,7 +42,7 @@ export async function listLegacyFiles(prefix: string) {
 	const found = new Set<string>()
 	async function visit(dir: string) {
 		try {
-			for (const entry of await readdir(path.join(process.cwd(), dir), { withFileTypes: true })) {
+			for (const entry of await readdir(path.join(process.cwd(), 'public/blogs', dir.slice('public/blogs/'.length)), { withFileTypes: true })) {
 				const name = `${dir}/${entry.name}`
 				if (entry.isDirectory()) await visit(name)
 				else if (entry.isFile()) found.add(name)

@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { loadLegacyJson } from '@/lib/legacy-client'
 import { useCenterStore } from '@/hooks/use-center'
+import { ArrowUpRight, Sparkles } from 'lucide-react'
 
 export default function Layout({
 	children,
@@ -20,6 +21,7 @@ export default function Layout({
 	initialSiteContent
 }: PropsWithChildren<{ docsSite: Record<string, string>; initialSiteContent: SiteContent }>) {
 	const pathname = usePathname()
+	const adminPage = /^\/(admin|write)(\/|$)/.test(pathname)
 	useCenterInit()
 	useSizeInit()
 	useEffect(() => useCenterStore.getState().recalc(), [pathname])
@@ -39,9 +41,30 @@ export default function Layout({
 			'--color-article': value.theme.colorArticle
 		}))
 			document.documentElement.style.setProperty(key, color)
-		loadLegacyJson<CardStyles>('src/config/card-styles.json').then(setCardStyles).catch(console.error)
-	}, [initialSiteContent, setSiteContent, setCardStyles])
-	if (/^\/(admin|docs|search|sections)(\/|$)/.test(pathname)) {
+		if (!adminPage) loadLegacyJson<CardStyles>('src/config/card-styles.json').then(setCardStyles).catch(console.error)
+	}, [initialSiteContent, setSiteContent, setCardStyles, adminPage])
+	if (adminPage) {
+		return (
+			<div className='admin-site'>
+				<header className='admin-site-header'>
+					<Link href='/' className='admin-site-brand'>
+						<img src={docsSite.logo || '/images/avatar.png'} alt='' />
+						<span>{docsSite.name || siteContent.meta.title}</span>
+						<small>
+							<Sparkles size={13} />
+							创作空间
+						</small>
+					</Link>
+					<Link href='/' className='admin-button quiet'>
+						<ArrowUpRight size={17} />
+						查看网站
+					</Link>
+				</header>
+				{children}
+			</div>
+		)
+	}
+	if (/^\/(docs|search|sections)(\/|$)/.test(pathname)) {
 		return (
 			<div className='docs-site'>
 				<header className='docs-header'>

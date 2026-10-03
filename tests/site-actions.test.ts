@@ -223,3 +223,15 @@ test('backs up and clears old SQLite content once', () => {
 	resetDbForTests()
 	assert.equal(entries(true).length, 0)
 })
+
+test('returns the saved entry and preserves meaningful Markdown whitespace', () => {
+	const target = sections().find(item => item.name === 'AI 技术分享')!
+	const id = Number(createEntry({ section_id: target.id, title: 'Markdown 草稿' }))
+	const body = '    缩进代码\n\n正文末尾保留换行  \n'
+	const saved = saveEntry({ id, section_id: target.id, title: ' 标题 ', summary: ' 摘要 ', body, position: 0 })
+	assert.equal(saved.title, '标题')
+	assert.equal(saved.summary, '摘要')
+	assert.equal(saved.body, body)
+	assert.equal(adminData().entries.find(item => item.id === id)?.body, body)
+	assert.equal(publicEntry(id), undefined)
+})

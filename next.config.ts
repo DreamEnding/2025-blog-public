@@ -2,6 +2,9 @@ import { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
 	output: 'standalone',
+	outputFileTracingExcludes: {
+		'/*': ['./data/**/*', './data-smoke/**/*', './data-restore-test/**/*', './.env*', './.git/**/*', './**/*handoff*.md', './**/*HANDOFF*.md', './AGENTS.md']
+	},
 	serverExternalPackages: ['better-sqlite3'],
 	devIndicators: false,
 	reactStrictMode: false,

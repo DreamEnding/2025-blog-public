@@ -18,7 +18,14 @@ $landing = Invoke-WebRequest -Uri $Base -Proxy $proxy -WebSession $session
 $docs = Invoke-WebRequest -Uri "$Base/docs" -Proxy $proxy -WebSession $session
 if ($landing.StatusCode -ne 200 -or $docs.StatusCode -ne 200 -or $docs.Content -notmatch 'API 文档') { throw '首页或文档入口失败' }
 try { Invoke-RestMethod -Uri "$Base/api/manage/data" -Proxy $proxy -WebSession $session | Out-Null; throw '未登录访问被允许' } catch { if ([int]$_.Exception.Response.StatusCode -ne 401) { throw } }
+foreach ($protectedAction in @('save-entry', 'publish-entry', 'upload', 'restore-backup')) {
+	try { Post $protectedAction @{} | Out-Null; throw "$protectedAction 未登录写入被允许" } catch { if ([int]$_.Exception.Response.StatusCode -ne 401) { throw } }
+}
 Post 'login' @{ username = $Username; password = $Password } | Out-Null
+foreach ($invalidOrigin in @('https://invalid.example', 'null', '')) {
+	$invalidHeaders = if ($invalidOrigin) { @{ Origin = $invalidOrigin } } else { @{} }
+	try { Invoke-RestMethod -Uri "$Base/api/manage/save-entry" -Method Post -Headers $invalidHeaders -ContentType 'application/json' -Body '{}' -Proxy $proxy -WebSession $session | Out-Null; throw '非法来源写入被允许' } catch { if ([int]$_.Exception.Response.StatusCode -ne 403) { throw } }
+}
 $initial = Invoke-RestMethod -Uri "$Base/api/manage/data" -Proxy $proxy -WebSession $session
 $initialBackup = Invoke-RestMethod -Uri "$Base/api/manage/backup" -Proxy $proxy -WebSession $session
 if ($initial.sections.Count -ne 3) { throw '初始栏目数量错误' }
@@ -27,6 +34,9 @@ $tutorialId = [int]($initial.sections | Where-Object name -eq '使用教程').id
 try { Post 'create-entry' @{ section_id = $tutorialId; title = '第二篇教程' } | Out-Null; throw '教程单篇限制未生效' } catch { if ([int]$_.Exception.Response.StatusCode -ne 400) { throw } }
 $entryId = [int](Post 'create-entry' @{ section_id = $sectionId; title = '测试文档' })
 Post 'save-entry' @{ id = $entryId; section_id = $sectionId; title = '测试文档'; summary = '摘要'; body = "## 开始`n`n旧版公开正文"; position = 0 } | Out-Null
+$anonymousAdmin = Invoke-WebRequest -Uri "$Base/admin" -Proxy $proxy
+$anonymousWriter = Invoke-WebRequest -Uri "$Base/write" -Proxy $proxy
+if ($anonymousAdmin.Content -match '旧版公开正文' -or $anonymousWriter.Content -match '旧版公开正文') { throw '后台初始数据泄露给未登录访问者' }
 $hidden = Invoke-WebRequest -Uri "$Base/articles/$entryId" -Proxy $proxy -SkipHttpErrorCheck
 if ($hidden.StatusCode -ne 404) { throw '草稿公开了' }
 Post 'publish-entry' @{ id = $entryId } | Out-Null
@@ -49,6 +59,8 @@ $imagePath = Join-Path $env:TEMP "docs-smoke-$([guid]::NewGuid()).png"
 [IO.File]::WriteAllBytes($imagePath, [Convert]::FromBase64String('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lXcAAAAASUVORK5CYII='))
 try {
 	$cookie = $session.Cookies.GetCookies($Base) | Where-Object Name -eq 'site_admin' | Select-Object -First 1
+	$invalidUpload = curl.exe --silent --show-error --proxy $proxy --cookie "site_admin=$($cookie.Value)" --header "Origin: $Base" --form "file=@$imagePath;type=image/svg+xml" "$Base/api/manage/upload" | ConvertFrom-Json
+	if (-not $invalidUpload.error -or $invalidUpload.url) { throw 'SVG 上传未被拒绝' }
 	$upload = curl.exe --silent --show-error --proxy $proxy --cookie "site_admin=$($cookie.Value)" --header "Origin: $Base" --form "file=@$imagePath;type=image/png" "$Base/api/manage/upload" | ConvertFrom-Json
 	if (-not $upload.url) { throw '图片上传失败' }
 	$image = Invoke-WebRequest -Uri "$Base$($upload.url)" -Proxy $proxy
@@ -74,4 +86,4 @@ $duplicateTutorial.id = 999999
 $invalidBackup.entries += $duplicateTutorial
 try { Post 'restore-backup' @{ confirm = '覆盖全部数据'; backup = $invalidBackup } | Out-Null; throw '重复教程备份被允许' } catch { if ([int]$_.Exception.Response.StatusCode -ne 400) { throw } }
 Post 'restore-backup' @{ confirm = '覆盖全部数据'; backup = $initialBackup } | Out-Null
-Write-Output 'SMOKE_OK: auth, single tutorial, draft, publish, SSR, metadata, search, settings, restore version, upload, withdraw, backup restore'
+Write-Output 'SMOKE_OK: auth, CSRF, private admin SSR, single tutorial, draft, publish, SSR, metadata, search, settings, restore version, upload type checks, withdraw, backup restore'

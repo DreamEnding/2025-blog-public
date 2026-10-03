@@ -1,5 +1,6 @@
 import '@/styles/globals.css'
 import '@/styles/docs.css'
+import '@/styles/admin.css'
 
 import type { Viewport } from 'next'
 import Layout from '@/layout'
