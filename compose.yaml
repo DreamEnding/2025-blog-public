@@ -10,8 +10,14 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET}
       SITE_URL: ${SITE_URL:-http://localhost:3000}
       DATA_DIR: /data
+      RSSHUB_URL: http://rsshub:1200
+      RSS_FETCH_PROXY: ${RSS_FETCH_PROXY:-}
+      ZHIHU_COOKIES: ${ZHIHU_COOKIES:-}
+      RSSHUB_PROXY_URI: ${RSSHUB_PROXY_URI:-}
+      RSSHUB_RUNTIME_FILE: /rsshub-config/runtime.json
     volumes:
       - site_data:/data
+      - rsshub_config:/rsshub-config
     healthcheck:
       test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
@@ -19,5 +25,31 @@ services:
       start_period: 30s
       retries: 3
 
+  rsshub:
+    image: ghcr.io/diygod/rsshub:chromium-bundled
+    restart: unless-stopped
+    depends_on:
+      docs:
+        condition: service_started
+    command: ['node', '/rsshub-control/runtime.mjs']
+    environment:
+      NODE_ENV: production
+      CACHE_TYPE: memory
+      ZHIHU_COOKIES: ${ZHIHU_COOKIES:-}
+      PROXY_URI: ${RSSHUB_PROXY_URI:-}
+      RSSHUB_RUNTIME_FILE: /rsshub-config/runtime.json
+    volumes:
+      - ./rsshub:/rsshub-control:ro
+      - rsshub_config:/rsshub-config:ro
+    expose:
+      - '1200'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:1200/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
 volumes:
   site_data:
+  rsshub_config:

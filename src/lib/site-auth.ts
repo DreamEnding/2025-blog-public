@@ -56,6 +56,12 @@ export async function isAdmin() {
 	return actual.length === expected.length && timingSafeEqual(actual, expected)
 }
 
+export async function adminSessionScope() {
+	const token = (await cookies()).get(cookieName)?.value
+	if (!token) throw new Error('请先登录')
+	return createHmac('sha256', secret()).update(`zhihu-login:${token}`).digest('hex')
+}
+
 export async function sameOrigin(request: Request) {
 	const origin = request.headers.get('origin')
 	if (!origin) return false

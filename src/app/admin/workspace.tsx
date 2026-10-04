@@ -18,6 +18,7 @@ import {
 	FilePlus2,
 	FileText,
 	Focus,
+	ImagePlus,
 	LayoutPanelLeft,
 	LoaderCircle,
 	LogOut,
@@ -26,6 +27,7 @@ import {
 	MoreHorizontal,
 	PencilLine,
 	RotateCcw,
+	Rss,
 	Save,
 	Search,
 	Settings2,
@@ -37,10 +39,12 @@ import {
 import type { Entry, Section } from '@/lib/site-db'
 import { draftFields, reconcileEntry, reconcileSavedEntry, recoverDraft, sameDraft, type DraftFields } from '@/lib/admin-draft'
 import { DialogModal } from '@/components/dialog-modal'
+import RssPanel from './rss-panel'
+import ImagesPanel from './images-panel'
 
 export type AdminData = { sections: Section[]; entries: Entry[]; settings: Record<string, string> }
 type ViewMode = 'edit' | 'split' | 'preview'
-type Panel = 'content' | 'settings' | 'backup'
+type Panel = 'content' | 'rss' | 'images' | 'settings' | 'backup'
 type Confirmation = { title: string; description: string; label: string; run: () => Promise<void> }
 
 const MarkdownEditor = dynamic(() => import('./markdown-editor'), {
@@ -55,6 +59,8 @@ const MarkdownEditor = dynamic(() => import('./markdown-editor'), {
 const MarkdownPreview = dynamic(() => import('./markdown-preview'), { ssr: false, loading: () => <div className='admin-loading'>正在准备预览…</div> })
 const panels = [
 	{ id: 'content', label: '内容管理', icon: BookOpenText },
+	{ id: 'rss', label: 'RSS 订阅', icon: Rss },
+	{ id: 'images', label: '图片库', icon: ImagePlus },
 	{ id: 'settings', label: '站点设置', icon: Settings2 },
 	{ id: 'backup', label: '备份恢复', icon: DatabaseBackup }
 ] as const
@@ -191,6 +197,7 @@ export function AdminWorkspace({ initialData, writerOnly = false }: { initialDat
 	const [saveError, setSaveError] = useState('')
 	const [error, setError] = useState('')
 	const [notice, setNotice] = useState('')
+	const [imageWarnings, setImageWarnings] = useState<string[]>([])
 	const [lastSaved, setLastSaved] = useState('')
 	const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
 	const confirmationRoot = useRef<HTMLDivElement>(null)
@@ -229,6 +236,7 @@ export function AdminWorkspace({ initialData, writerOnly = false }: { initialDat
 		setDraft(next)
 		setSaveError('')
 		setNotice('')
+		if (changes.body !== undefined) setImageWarnings([])
 	}, [])
 	const changeBody = useCallback((body: string) => editDraft({ body }), [editDraft])
 
@@ -397,6 +405,7 @@ export function AdminWorkspace({ initialData, writerOnly = false }: { initialDat
 		setSaveError('')
 		setNotice('')
 		setSidebarOpen(false)
+		setImageWarnings([])
 	}
 	async function switchPanel(next: Panel) {
 		if (operation.current || !(await flushDraft())) return
@@ -464,6 +473,17 @@ export function AdminWorkspace({ initialData, writerOnly = false }: { initialDat
 			operation.current = false
 			setBusy(null)
 		}
+	}
+	async function retryImages() {
+		if (!(await flushDraft())) return
+		const current = draftRef.current
+		if (!current) return
+		await perform('images', async () => {
+			const result = await action('localize-images', { body: current.body })
+			editDraft({ body: result.body })
+			setImageWarnings(result.warnings)
+			setNotice(`已转存 ${result.count} 张图片${result.warnings.length ? `，${result.warnings.length} 张未成功，可重试或替换。` : '。'}`)
+		})
 	}
 	function documentAction(kind: 'withdraw-entry' | 'restore-entry' | 'delete-entry') {
 		if (!draft) return
@@ -709,6 +729,16 @@ export function AdminWorkspace({ initialData, writerOnly = false }: { initialDat
 									</div>
 								)}
 								<div className='admin-document-meta'>
+									{imageWarnings.length > 0 && (
+										<details className='admin-image-warnings'>
+											<summary>{imageWarnings.length} 张图片转存未成功（保留原地址）</summary>
+											<ul>
+												{imageWarnings.map(warning => (
+													<li key={warning}>{warning}</li>
+												))}
+											</ul>
+										</details>
+									)}
 									<div className='admin-document-heading'>
 										<span className='admin-eyebrow'>
 											{data.sections.find(item => item.id === draft.section_id)?.name} / {draft.published ? '已发布' : '草稿'}
@@ -796,6 +826,24 @@ export function AdminWorkspace({ initialData, writerOnly = false }: { initialDat
 										</button>
 									</div>
 									<div className='admin-view-tools'>
+										<button
+											type='button'
+											className='admin-icon-button'
+											disabled={Boolean(busy)}
+											aria-label='打开图片库'
+											title='打开图片库'
+											onClick={() => void switchPanel('images')}>
+											<ImagePlus size={18} />
+										</button>
+										<button
+											type='button'
+											className='admin-icon-button'
+											disabled={Boolean(busy)}
+											aria-label='转存正文远程图片'
+											title='转存正文远程图片 / 重试转存'
+											onClick={() => void retryImages()}>
+											<Cloud size={18} />
+										</button>
 										<button type='button' className='admin-icon-button admin-open-library' aria-label='打开内容列表' onClick={() => setSidebarOpen(true)}>
 											<Menu size={18} />
 										</button>
@@ -857,6 +905,35 @@ export function AdminWorkspace({ initialData, writerOnly = false }: { initialDat
 					</section>
 				</div>
 			</section>
+			<RssPanel
+				active={tab === 'rss'}
+				busy={Boolean(busy)}
+				action={action}
+				onTask={task => perform('rss', task)}
+				onOpen={async (id, warnings = []) => {
+					await loadData(true, id)
+					setTab('content')
+					setFilter('all')
+					setQuery('')
+					setViewMode(window.matchMedia('(min-width: 1100px)').matches ? 'split' : 'preview')
+					setImageWarnings(warnings)
+					setNotice(warnings.length ? `草稿已准备好，${warnings.length} 张图片转存未成功，可重试或替换。` : '草稿已准备好，可预览、编辑后发布。')
+				}}
+			/>
+			<ImagesPanel
+				active={tab === 'images'}
+				busy={Boolean(busy)}
+				canInsert={Boolean(draft)}
+				action={action}
+				onTask={task => perform('images', task)}
+				onInsert={url => {
+					const current = draftRef.current
+					if (!current) return
+					editDraft({ body: `${current.body.trimEnd()}\n\n![图片说明](${url})\n` })
+					setTab('content')
+					setViewMode(window.matchMedia('(min-width: 1100px)').matches ? 'split' : 'preview')
+				}}
+			/>
 			<section className='admin-surface admin-settings-panel' hidden={tab !== 'settings'}>
 				<div className='admin-section-heading'>
 					<span className='admin-eyebrow'>SITE SETTINGS</span>
@@ -937,7 +1014,7 @@ export function AdminWorkspace({ initialData, writerOnly = false }: { initialDat
 				<div className='admin-section-heading'>
 					<span className='admin-eyebrow'>PEACE OF MIND</span>
 					<h2>为你的内容留一份备份</h2>
-					<p>包含文档、草稿、发布版本、站点设置和上传图片。建议在更新或恢复之前，先导出当前内容。</p>
+					<p>包含文档、草稿、发布版本、订阅、站点设置和上传图片。知乎 Cookie 和代理凭据单独保存，不包含在内容备份中。</p>
 				</div>
 				<div className='admin-backup-grid'>
 					<div>

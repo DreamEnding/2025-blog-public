@@ -1,4 +1,4 @@
-import { marked } from 'marked'
+import { Marked } from 'marked'
 import type { Tokens } from 'marked'
 
 export type TocItem = { id: string; text: string; level: number }
@@ -74,6 +74,7 @@ async function loadKatex() {
 }
 
 export async function renderMarkdown(markdown: string): Promise<MarkdownRenderResult> {
+	const marked = new Marked()
 	// Load optional renderers first so they apply on the FIRST lex/parse pass.
 	// (If we lex before registering extensions, math tokens won't ever be produced on a cold refresh.)
 	const codeBlockMap = new Map<string, { html: string; original: string }>()
@@ -84,13 +85,16 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 	// Render HTML with heading ids
 	const renderer = new marked.Renderer()
 
-	renderer.heading = (token: Tokens.Heading) => {
+	renderer.heading = function (token: Tokens.Heading) {
 		const id = headingIds.get(token) || slugify(plainText(token.tokens)) || 'section'
-		return `<h${token.depth} id="${id}">${marked.parseInline(token.text)}</h${token.depth}>`
+		return `<h${token.depth} id="${id}">${this.parser.parseInline(token.tokens)}</h${token.depth}>`
 	}
 	renderer.html = token => escapeHtml(token.text)
-	renderer.link = token =>
-		safeUrl(token.href) ? `<a href="${escapeHtml(token.href)}" rel="noreferrer">${marked.parseInline(token.text)}</a>` : escapeHtml(plainText(token.tokens))
+	renderer.link = function (token) {
+		return safeUrl(token.href)
+			? `<a href="${escapeHtml(token.href)}" rel="noreferrer">${this.parser.parseInline(token.tokens)}</a>`
+			: escapeHtml(plainText(token.tokens))
+	}
 	renderer.image = token => (safeUrl(token.href) ? `<img src="${escapeHtml(token.href)}" alt="${escapeHtml(token.text)}" />` : escapeHtml(token.text))
 
 	renderer.code = (token: Tokens.Code) => {
@@ -111,13 +115,13 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 		return `<code>${escapeHtml(token.text)}</code>`
 	}
 
-	renderer.listitem = (token: Tokens.ListItem) => {
+	renderer.listitem = function (token: Tokens.ListItem) {
 		// Render inline markdown inside list items (e.g. links, emphasis)
 		let inner = token.text
 		let tokens = token.tokens
 
 		if (token.task) tokens = tokens.slice(1)
-		inner = marked.parser(tokens) as string
+		inner = this.parser.parse(tokens) as string
 
 		if (token.task) {
 			const checkbox = token.checked ? '<input type="checkbox" checked disabled />' : '<input type="checkbox" disabled />'

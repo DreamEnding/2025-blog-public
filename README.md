@@ -28,7 +28,11 @@
 
 ## 本地开发
 
-需要 Node.js 22+ 和 pnpm 10。复制 `.env.example` 为 `.env.local`，设置管理员账号、密码和至少 32 字符的 `SESSION_SECRET`，然后运行：
+后台「知乎扫码登录」提供官方网页登录画面，你扫码并完成必要验证后，会自动保存知乎 Cookie 到私有配置并加载到 RSSHub；支持取消、超时和重新扫码。配套 RSSHub 镜像包含 Chromium，无需在网站容器额外安装浏览器。
+
+后台「RSS 订阅」可配置 RSSHub 服务地址、知乎 Cookie、RSSHub 抓取代理和网站下载代理，保存后配套 RSSHub 自动加载，支持检查连接、保留/替换/清空敏感值。还可添加知乎作者或专栏、刷新并预览候选文章，选择导入「AI 技术分享」草稿，再编辑、发布或撤回。已预设用户指定的知乎作者；导入会保留原文链接及作者，并将配图转存到本地图床。后台「图片库」提供上传、远程图片转存、预览、复制地址和插入草稿。Compose 随项目启动独立 RSSHub，配置方式见 [部署说明](docs/deployment.md#rss-订阅与文章摘录)。
+
+需要 Node.js 22.19+ 和 pnpm 10。复制 `.env.example` 为 `.env.local`，设置管理员账号、密码和至少 32 字符的 `SESSION_SECRET`，然后运行：
 
 ```powershell
 pnpm install
@@ -57,6 +61,10 @@ pwsh -NoProfile -File ./tests/start-verification.ps1
 ```
 
 界面开发验收可加 `-Development`，使用支持热更新的 `http://127.0.0.1:2036`；同样使用独立临时数据和测试凭据。
+
+RSS 摘录可另外运行 `pnpm exec tsx tests/rss-fixture.ts`，在 2037 端口提供本地验收订阅源，再运行 `pwsh -NoProfile -File ./tests/rss-smoke.ps1`。该脚本只应对隔离实例使用，会检查候选刷新、转换预览、草稿导入、重复导入、发布/下架，以及新版和旧版备份恢复，结束时恢复测试前的内容。
+
+配套 RSSHub 启动后，`pwsh -NoProfile -File ./tests/rss-settings-smoke.ps1` 验证后台抓取配置、敏感信息遮蔽、权限和自动加载；仅用于 Cookie 和网站下载代理为空的隔离实例。更新预览时可给 `start-verification.ps1` 传入 `-DataDirectory` 复用此前的临时验收目录，脚本只接受临时目录中的 `chream-verify-*` 路径。
 
 在另一个终端运行烟测；验收完成后，在服务终端按 Ctrl+C 停止：
 

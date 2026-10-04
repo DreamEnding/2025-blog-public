@@ -10,8 +10,12 @@ export function generateMetadata() {
 
 export default function AiSharingPage() {
 	return (
-		<main className='docs-container'>
-			<h1>AI 技术分享</h1>
+		<main className='docs-container tutorial-page'>
+			<header className='tutorial-header'>
+				<p className='tutorial-kicker'>技术实践 / NEXUS AI</p>
+				<h1>AI 技术分享</h1>
+				<p>AI 工具、API 接入与开发实践。</p>
+			</header>
 			<ContentList items={publishedIn('AI 技术分享')} />
 		</main>
 	)

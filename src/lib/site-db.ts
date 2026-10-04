@@ -23,6 +23,7 @@ export type Entry = {
 	previous_section_id: number | null
 	previous_position: number | null
 	published_at: string | null
+	source_url?: string | null
 }
 
 let connection: Database.Database | undefined
@@ -57,15 +58,32 @@ export function db() {
 		CREATE TABLE IF NOT EXISTS legacy_files (path TEXT PRIMARY KEY, content BLOB, deleted INTEGER NOT NULL DEFAULT 0);
 		CREATE TABLE IF NOT EXISTS likes (slug TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0);
 		CREATE TABLE IF NOT EXISTS like_events (slug TEXT NOT NULL, visitor TEXT NOT NULL, liked_at INTEGER NOT NULL, PRIMARY KEY(slug, visitor));
+		CREATE TABLE IF NOT EXISTS rss_subscriptions (
+			id INTEGER PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL UNIQUE,
+			refreshed_at TEXT, error TEXT NOT NULL DEFAULT ''
+		);
+		CREATE TABLE IF NOT EXISTS rss_items (
+			id INTEGER PRIMARY KEY, subscription_id INTEGER NOT NULL REFERENCES rss_subscriptions(id) ON DELETE CASCADE,
+			title TEXT NOT NULL, link TEXT NOT NULL, author TEXT NOT NULL DEFAULT '', published_at TEXT,
+			html TEXT NOT NULL, UNIQUE(subscription_id, link)
+		);
 	`)
 	const columns = new Set((connection.prepare('PRAGMA table_info(entries)').all() as { name: string }[]).map(column => column.name))
 	for (const [name, type] of [
 		['public_section_id', 'INTEGER REFERENCES sections(id)'],
 		['public_position', 'INTEGER'],
 		['previous_section_id', 'INTEGER REFERENCES sections(id)'],
-		['previous_position', 'INTEGER']
+		['previous_position', 'INTEGER'],
+		['source_url', 'TEXT']
 	] as const) {
 		if (!columns.has(name)) connection.exec(`ALTER TABLE entries ADD COLUMN ${name} ${type}`)
+	}
+	connection.exec('CREATE UNIQUE INDEX IF NOT EXISTS entries_source_url ON entries(source_url) WHERE source_url IS NOT NULL')
+	if (!connection.prepare("SELECT 1 FROM meta WHERE key = 'rss_subscription_20261004'").get()) {
+		connection
+			.prepare('INSERT OR IGNORE INTO rss_subscriptions (name, url) VALUES (?, ?)')
+			.run('知乎 · zhang-xiao-yu-45-67-74', '/zhihu/posts/people/zhang-xiao-yu-45-67-74')
+		connection.prepare("INSERT INTO meta (key, value) VALUES ('rss_subscription_20261004', '1')").run()
 	}
 	connection.exec(`UPDATE entries SET public_section_id = section_id, public_position = position
 		WHERE public_title IS NOT NULL AND public_section_id IS NULL`)

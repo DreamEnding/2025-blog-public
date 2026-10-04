@@ -49,15 +49,17 @@ function markdownContent(html: string): ReactElement {
 }
 
 export function useMarkdownRender(markdown: string, rendered?: MarkdownRenderResult) {
-	const prepared = useMemo(() => (rendered ? { content: markdownContent(rendered.html), toc: rendered.toc, loading: false } : null), [rendered])
+	const prepared = useMemo(() => (rendered ? { content: markdownContent(rendered.html), toc: rendered.toc, loading: false, error: '' } : null), [rendered])
 	const [content, setContent] = useState<ReactElement | null>(null)
 	const [toc, setToc] = useState<TocItem[]>([])
 	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState('')
 
 	useEffect(() => {
 		if (prepared) return
 		let cancelled = false
 		setLoading(true)
+		setError('')
 		renderMarkdown(markdown)
 			.then(result => {
 				if (!cancelled) {
@@ -65,11 +67,12 @@ export function useMarkdownRender(markdown: string, rendered?: MarkdownRenderRes
 					setToc(result.toc)
 				}
 			})
-			.catch(error => {
-				console.error('Markdown render error:', error)
+			.catch(cause => {
+				console.error('Markdown render error:', cause instanceof Error ? cause.message.split('\n')[0] : 'Unknown error')
 				if (!cancelled) {
 					setContent(null)
 					setToc([])
+					setError('预览渲染失败，正文已保留。')
 				}
 			})
 			.finally(() => {
@@ -80,5 +83,5 @@ export function useMarkdownRender(markdown: string, rendered?: MarkdownRenderRes
 		}
 	}, [markdown, prepared])
 
-	return prepared || { content, toc, loading }
+	return prepared || { content, toc, loading, error }
 }

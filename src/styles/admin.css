@@ -69,6 +69,229 @@
 	font-size: 13px;
 	font-weight: 600;
 }
+
+.admin-rss-panel,
+.admin-images-panel {
+	padding: 30px;
+}
+.admin-rss-base {
+	display: flex;
+	align-items: end;
+	gap: 12px;
+	margin: 22px 0;
+}
+.admin-rss-base label {
+	flex: 1;
+}
+.admin-rss-settings {
+	display: grid;
+	gap: 20px;
+	margin: 24px 0;
+	padding: 22px;
+	border: 1px solid var(--admin-line);
+	border-radius: 16px;
+}
+.admin-rss-settings-heading p,
+.admin-rss-setting-field p {
+	margin: 7px 0;
+	color: var(--admin-muted);
+	font-size: 12px;
+}
+.admin-rss-settings-grid {
+	display: grid;
+	align-items: start;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 20px;
+}
+.admin-zhihu-login {
+	--admin-ink: var(--color-primary);
+	--admin-muted: var(--color-secondary);
+	--admin-accent: var(--color-brand);
+	--admin-line: color-mix(in srgb, var(--color-primary) 9%, transparent);
+	color: var(--admin-ink);
+	background: var(--color-card);
+	border-radius: 20px;
+	font-family: var(--font-sans);
+	width: min(1050px, 94vw);
+	max-width: none;
+	max-height: 94vh;
+	overflow: auto;
+	padding: 24px;
+}
+.admin-zhihu-login h3 {
+	margin: 0;
+}
+.admin-zhihu-login p {
+	margin: 10px 0;
+	font-size: 13px;
+}
+.admin-zhihu-frame {
+	display: block;
+	width: 100%;
+	border: 1px solid #d5e1e5;
+	border-radius: 12px;
+	touch-action: none;
+	cursor: pointer;
+}
+.admin-rss-secret-input {
+	display: flex;
+	gap: 6px;
+}
+.admin-site .admin-rss-clear {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 10px;
+	font-weight: 400;
+}
+.admin-site .admin-rss-clear input {
+	width: 16px;
+	min-width: 16px;
+	height: 16px;
+	padding: 0;
+	accent-color: var(--admin-accent);
+}
+.admin-rss-layout {
+	display: grid;
+	grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+	gap: 28px;
+}
+.admin-rss-panel h3 {
+	margin: 0 0 10px;
+	font-size: 16px;
+}
+.admin-rss-subscription {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-bottom: 8px;
+}
+.admin-rss-subscription > button {
+	flex: 1;
+	justify-content: start;
+	min-width: 0;
+}
+.admin-rss-subscription > button[aria-pressed='true'] {
+	background: color-mix(in srgb, var(--admin-accent) 18%, transparent);
+}
+.admin-rss-subscription span {
+	overflow-wrap: anywhere;
+}
+.admin-rss-subscription-tools,
+.admin-rss-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.admin-rss-form {
+	display: grid;
+	gap: 14px;
+	margin-top: 24px;
+	padding-top: 22px;
+	border-top: 1px solid var(--admin-line);
+}
+.admin-rss-form p,
+.admin-rss-list-heading p,
+.admin-rss-item p,
+.admin-image-card p {
+	margin: 0;
+	color: var(--admin-muted);
+	font-size: 13px;
+	overflow-wrap: anywhere;
+}
+.admin-rss-list-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+.admin-rss-item {
+	padding: 22px 0;
+	border-bottom: 1px solid var(--admin-line);
+}
+.admin-rss-item-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 8px;
+	color: var(--admin-muted);
+	font-size: 12px;
+}
+.admin-rss-item .admin-rss-actions,
+.admin-image-card .admin-rss-actions {
+	margin-top: 14px;
+}
+.admin-rss-preview {
+	margin-top: 24px;
+	padding-top: 24px;
+	border-top: 1px solid var(--admin-line);
+}
+.admin-rss-preview .admin-preview-reader {
+	max-height: 700px;
+	overflow: auto;
+}
+.admin-images-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+	gap: 20px;
+	margin-top: 24px;
+}
+.admin-image-card {
+	min-width: 0;
+	padding: 12px;
+	border: 1px solid var(--admin-line);
+	border-radius: 16px;
+}
+.admin-image-thumbnail {
+	width: 100%;
+	height: 180px;
+	padding: 0;
+	margin-bottom: 10px;
+	border: 0;
+	border-radius: 10px;
+	background: #ffffff70;
+	overflow: hidden;
+}
+.admin-image-thumbnail img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+.admin-image-preview {
+	display: grid;
+	justify-items: center;
+	gap: 14px;
+	margin-top: 20px;
+}
+.admin-image-preview img {
+	max-width: 100%;
+	max-height: 70vh;
+	object-fit: contain;
+}
+.admin-image-warnings {
+	padding: 12px 24px;
+	font-size: 13px;
+	overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+	.admin-rss-settings-grid {
+		grid-template-columns: 1fr;
+	}
+	.admin-rss-layout {
+		grid-template-columns: 1fr;
+	}
+	.admin-rss-panel,
+	.admin-images-panel {
+		padding: 20px;
+	}
+	.admin-rss-base,
+	.admin-rss-list-heading {
+		flex-direction: column;
+		align-items: stretch;
+	}
+}
 .admin-site input::placeholder,
 .admin-site textarea::placeholder {
 	color: color-mix(in srgb, var(--admin-muted) 75%, transparent);

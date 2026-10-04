@@ -21,11 +21,15 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
 	if (!item || (name !== '使用教程' && name !== 'AI 技术分享')) notFound()
 	if (name === '使用教程') redirect('/tutorials')
 	return (
-		<main className='docs-container'>
-			<Link href='/ai-sharing'>← {name}</Link>
-			<h1>{item.public_title}</h1>
-			<p className='docs-summary'>{item.public_summary}</p>
-			<PublicMarkdown body={item.public_body || ''} />
+		<main className='docs-container tutorial-page'>
+			<header className='tutorial-header'>
+				<p className='tutorial-kicker'>
+					<Link href='/ai-sharing'>← {name}</Link>
+				</p>
+				<h1>{item.public_title}</h1>
+				<p>{item.public_summary}</p>
+			</header>
+			<PublicMarkdown body={item.public_body || ''} tutorial tocTitle='文章目录' />
 		</main>
 	)
 }

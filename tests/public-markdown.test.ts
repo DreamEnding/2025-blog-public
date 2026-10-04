@@ -16,3 +16,22 @@ test('renders the public article and working controls in the initial HTML', asyn
 	assert.match(html, /<img[^>]+alt="控制台"/)
 	assert.doesNotMatch(html, /正在渲染/)
 })
+
+test('renders technical article sections and an interactive hierarchical directory using the document reader', async () => {
+	const component = await PublicMarkdown({
+		body: '## 主章节\n\n技术文章正文。\n\n### 子章节\n\n[项目文档](https://example.com/docs)\n\n```js\nconst example = 1\n```\n\n![示意图](/images/example.png)',
+		tutorial: true,
+		tocTitle: '文章目录'
+	})
+	const html = renderToStaticMarkup(component)
+	assert.match(html, /<article class="docs-article prose tutorial-article"/)
+	assert.match(html, /<h2 id="主章节">主章节<\/h2>/)
+	assert.match(html, /<h3 id="子章节">子章节<\/h3>/)
+	assert.match(html, /aria-label="文章目录"/)
+	assert.match(html, /class="tutorial-toc-section"[^>]*href="#主章节"/)
+	assert.match(html, /class="tutorial-toc-sub"[^>]*href="#子章节"/)
+	assert.match(html, /class="tutorial-toc-toggle"[^>]*aria-expanded="false"/)
+	assert.match(html, /class="tutorial-toc-progress"/)
+	assert.match(html, /aria-label="复制代码"/)
+	assert.match(html, /<img[^>]+alt="示意图"/)
+})

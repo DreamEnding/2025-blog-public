@@ -1,6 +1,6 @@
 #requires -Version 7.0
 
-param([switch]$CheckOnly, [switch]$Development)
+param([switch]$CheckOnly, [switch]$Development, [string]$DataDirectory)
 
 $ErrorActionPreference = 'Stop'
 $projectDir = Split-Path -Parent $PSScriptRoot
@@ -13,6 +13,11 @@ if (-not $Development -and -not (Test-Path -LiteralPath $buildId)) { throw '没�
 
 $verificationId = [guid]::NewGuid().ToString('N')
 $verificationDataDir = Join-Path ([IO.Path]::GetTempPath()) "chream-verify-$verificationId"
+if ($DataDirectory) {
+	$verificationDataDir = [IO.Path]::GetFullPath($DataDirectory)
+	$verificationTempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+	if (-not $verificationDataDir.StartsWith($verificationTempRoot, [StringComparison]::OrdinalIgnoreCase) -or (Split-Path -Leaf $verificationDataDir) -notlike 'chream-verify-*') { throw '只能复用临时目录中的 chream-verify-* 验收数据。' }
+}
 $secretPartOne = [guid]::NewGuid().ToString('N')
 $secretPartTwo = [guid]::NewGuid().ToString('N')
 $verificationSecret = [string]::Concat($secretPartOne, $secretPartTwo)
@@ -23,7 +28,7 @@ if ($CheckOnly) {
 	return
 }
 
-New-Item -ItemType Directory -Path $verificationDataDir | Out-Null
+New-Item -ItemType Directory -Force -Path $verificationDataDir | Out-Null
 $env:DATA_DIR = $verificationDataDir
 $env:ADMIN_USERNAME = 'admin'
 $env:ADMIN_PASSWORD = 'test-password-123456'
