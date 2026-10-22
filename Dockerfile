@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim AS build
+FROM node:22.23.4-bookworm-slim AS build
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 RUN npm install -g pnpm@10.33.2
@@ -7,7 +7,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
-FROM node:22-bookworm-slim
+FROM node:22.23.4-bookworm-slim
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 DATA_DIR=/data
 WORKDIR /app
 RUN useradd --system --uid 1001 --create-home app && mkdir /data /rsshub-config && chown app:app /data /rsshub-config && chmod 700 /rsshub-config

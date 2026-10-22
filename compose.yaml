@@ -26,7 +26,8 @@ services:
       retries: 3
 
   rsshub:
-    image: ghcr.io/diygod/rsshub:chromium-bundled
+    # Node.js 24.22.1，固定 amd64/arm64 多架构镜像版本。
+    image: ghcr.io/diygod/rsshub:chromium-bundled@sha256:09a3a3fc3125888059c4f4d0eaee3fef8ce07acdb9b4912a0c7d3ab330207b09
     restart: unless-stopped
     depends_on:
       docs:

@@ -2,13 +2,15 @@
 
 Compose 还包含独立的 RSSHub 服务，网站通过内部地址 `http://rsshub:1200` 读取订阅。RSSHub 的 1200 端口不对公网开放；启动后直接在后台「RSS 订阅」中使用，无需手动部署另一个服务。
 
+主站的构建和运行镜像均使用 Node.js 22.23.4。RSSHub 使用包含 Node.js 24.22.1 和 Chromium 的上游多架构镜像，Compose 通过 digest 固定版本，避免浮动标签改变 Node.js 版本。
+
 ## RSS 订阅与文章摘录
 
 登录浏览器首次使用时会通过已保存的抓取代理尝试从 Noto 官方仓库下载中文字体和 SIL OFL 许可证，并缓存到容器内；后续打开登录页复用缓存。字体不可下载时仍可扫码，但部分中文可能缺字。
 
 后台「RSS 订阅 → 抓取配置 → 知乎扫码登录」会打开知乎官方登录页面。选择页面中的扫码方式，用知乎 App 扫码并确认；出现验证码时由你手动完成。登录成功后会自动保存包含 `z_c0` 的知乎 Cookie，并加载到 RSSHub，前端只显示已配置，不回传 Cookie 明文。登录会话独立于你已有的浏览器，取消或 10 分钟超时会关闭；可以点击或拖动登录画面操作页面，二维码过期时点击「重新扫码」。
 
-扫码登录使用已保存的 RSSHub 抓取代理，修改代理后应先保存。首次部署需使用 `ghcr.io/diygod/rsshub:chromium-bundled` 镜像，并将整个 `rsshub/` 控制程序目录只读挂载到 `/rsshub-control`，Compose 已包含这些配置。登录内部接口对请求和响应签名、限制当前管理员会话归属，不向公网暴露登录控制端口。外部 RSSHub 实例需接入相同的配套程序及私有配置后才能使用自动登录。
+扫码登录使用已保存的 RSSHub 抓取代理，修改代理后应先保存。首次部署需使用 Compose 中固定版本的 `ghcr.io/diygod/rsshub:chromium-bundled` 镜像，并将整个 `rsshub/` 控制程序目录只读挂载到 `/rsshub-control`，Compose 已包含这些配置。登录内部接口对请求和响应签名、限制当前管理员会话归属，不向公网暴露登录控制端口。外部 RSSHub 实例需接入相同的配套程序及私有配置后才能使用自动登录。
 
 后台已预设知乎作者 `https://www.zhihu.com/people/zhang-xiao-yu-45-67-74`。进入「RSS 订阅」点击刷新，选择文章预览，再点击「导入并编辑」。导入只创建「AI 技术分享」草稿，保留作者、日期和原文链接；不会自动发布。代码、表格、列表、知乎图片和公式会转换为站内 Markdown。订阅仅提供摘要时，导入内容也只有摘要；后台预览用于确认内容是否完整。
 
@@ -30,7 +32,7 @@ Compose 还包含独立的 RSSHub 服务，网站通过内部地址 `http://rssh
 
 ```powershell
 New-Item -ItemType Directory -Force ./data/rsshub | Out-Null
-docker run -d --name rsshub-dev -p 127.0.0.1:1200:1200 -e RSSHUB_RUNTIME_FILE=/rsshub-config/runtime.json --mount "type=bind,source=$PWD/rsshub,target=/rsshub-control,readonly" --mount "type=bind,source=$PWD/data/rsshub,target=/rsshub-config,readonly" ghcr.io/diygod/rsshub:chromium-bundled node /rsshub-control/runtime.mjs
+docker run -d --name rsshub-dev -p 127.0.0.1:1200:1200 -e RSSHUB_RUNTIME_FILE=/rsshub-config/runtime.json --mount "type=bind,source=$PWD/rsshub,target=/rsshub-control,readonly" --mount "type=bind,source=$PWD/data/rsshub,target=/rsshub-config,readonly" ghcr.io/diygod/rsshub:chromium-bundled@sha256:09a3a3fc3125888059c4f4d0eaee3fef8ce07acdb9b4912a0c7d3ab330207b09 node /rsshub-control/runtime.mjs
 ```
 
 在新代码尚未经 GitHub Actions 发布镜像时，Compose 中的网站镜像仍可能是旧版本。需要测试当前工作区的容器版时，先执行 `docker build -t ghcr.io/dreamending/2025-blog-public:latest .`，再执行 `docker compose up -d`，以使用本地构建的新功能；不要在这之后执行 `docker compose pull docs` 覆盖本地镜像。
